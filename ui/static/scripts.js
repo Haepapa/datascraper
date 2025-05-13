@@ -59,7 +59,7 @@ function renderUrlTable() {
             <td>${escapeHtml(record.source)}</td>
             <td><a href="${escapeHtml(record.url)}" target="_blank" style="color: var(--primary-color);">${escapeHtml(record.url)}</a></td>
             <td class="action-buttons">
-                <button class="btn btn-primary" data-id="${record.id}">Edit</button>
+                <button class="btn btn-edit" data-id="${record.url}">Edit</button>
                 <button class="btn btn-delete" data-id="${record.url}">Delete</button>
             </td>
         `;
@@ -68,7 +68,7 @@ function renderUrlTable() {
     
     // Add event listeners to the edit and delete buttons
     document.querySelectorAll('.btn-edit').forEach(button => {
-        button.addEventListener('click', () => openEditModal(parseInt(button.dataset.id)));
+        button.addEventListener('click', () => openEditModal(button.dataset.id));
     });
     
     document.querySelectorAll('.btn-delete').forEach(button => {
@@ -121,11 +121,12 @@ function openAddModal() {
 
 // Open modal for editing a record
 function openEditModal(id) {
-    const record = urlData.find(item => item.id === id);
+    console.log('openEditModal(): Record ID:', id);
+    const record = urlData.find(item => item.url === id);
     if (!record) return;
-    
+
     modalTitle.textContent = 'Edit URL';
-    recordIdInput.value = record.id;
+    recordIdInput.value = id;
     activeInput.checked = record.active;
     sourceInput.value = record.source;
     urlInput.value = record.url;
@@ -160,8 +161,7 @@ function handleFormSubmit(e) {
     
     if (recordId) {
         // Edit existing record
-        const id = parseInt(recordId);
-        const index = urlData.findIndex(item => item.id === id);
+        const index = urlData.findIndex(item => item.url === recordId);
         
         if (index !== -1) {
             urlData[index] = { ...urlData[index], ...formData };
@@ -172,12 +172,15 @@ function handleFormSubmit(e) {
         urlData.push({ id: newId, ...formData });
     }
     
-    // Update the UI
-    renderUrlTable();
-    closeModal();
-    
     // This is where you would send the data to your backend
     console.log('Data ready to be sent to backend:', urlData);
+    if (sendJsonToFunction(urlData, "rssdata", "urls.json")) {
+        // Update the UI
+        renderUrlTable();
+        closeModal();
+    } else{
+        location.reload();
+    }
 }
 
 // Open delete confirmation modal
@@ -207,12 +210,12 @@ function deleteRecord() {
     } else {
         if (sendJsonToFunction(updatedUrlData, "rssdata", "urls.json")) {
             urlData = updatedUrlData;
+            renderUrlTable();
+            closeDeleteConfirmation();
         } else{
             location.reload();
         }
     }
-    renderUrlTable();
-    closeDeleteConfirmation();
     
     // This is where you would send the delete request to your backend
     console.log('Delete request ready to be sent for URL:', recordToDelete);
