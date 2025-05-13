@@ -60,7 +60,7 @@ function renderUrlTable() {
             <td><a href="${escapeHtml(record.url)}" target="_blank" style="color: var(--primary-color);">${escapeHtml(record.url)}</a></td>
             <td class="action-buttons">
                 <button class="btn btn-primary" data-id="${record.id}">Edit</button>
-                <button class="btn btn-delete" data-id="${record.id}">Delete</button>
+                <button class="btn btn-delete" data-id="${record.url}">Delete</button>
             </td>
         `;
         urlTableBody.appendChild(row);
@@ -72,7 +72,10 @@ function renderUrlTable() {
     });
     
     document.querySelectorAll('.btn-delete').forEach(button => {
-        button.addEventListener('click', () => openDeleteConfirmation(parseInt(button.dataset.id)));
+        button.addEventListener('click', () => {
+            if (!button.classList.contains('btn-delete-conf')) {
+            openDeleteConfirmation(button.dataset.id);
+        }});
     });
 }
 
@@ -176,12 +179,6 @@ function handleFormSubmit(e) {
     // This is where you would send the data to your backend
     console.log('Data ready to be sent to backend:', urlData);
 }
-// TODO (me): Implement backend API calls for adding/editing/deleting records
-// 1. get url into the id var below
-// 2. update current urlData removing and occurance of URL
-// 3. validate records have decreasee and records remain
-// 4. write to blob
-
 
 // Open delete confirmation modal
 function openDeleteConfirmation(id) {
@@ -193,14 +190,27 @@ function openDeleteConfirmation(id) {
 // Close delete confirmation modal
 function closeDeleteConfirmation() {
     confirmDeleteModal.style.display = 'none';
+    console.log('closeDeleteConfirmation(): Record to delete:', recordToDelete);
     recordToDelete = null;
 }
 
 // Delete a record
 function deleteRecord() {
+    console.log('deleteRecord(): Record to delete:', recordToDelete);
     if (recordToDelete === null) return;
     
-    urlData = urlData.filter(item => item.id !== recordToDelete);
+    updatedUrlData = urlData.filter(item => item.url !== recordToDelete);
+    updatedUrlData = updatedUrlData.filter(item => item.url !== null);
+    console.log('deleteRecord(): Updated URL data:', updatedUrlData);
+    if (updatedUrlData.length === 0 || urlData.length === 0 ||(updatedUrlData.length === urlData.length) || (updatedUrlData.length > urlData.length)) {
+        updatedUrlData = [];
+    } else {
+        if (sendJsonToFunction(updatedUrlData, "rssdata", "urls.json")) {
+            urlData = updatedUrlData;
+        } else{
+            location.reload();
+        }
+    }
     renderUrlTable();
     closeDeleteConfirmation();
     
@@ -220,3 +230,32 @@ function escapeHtml(unsafe) {
 
 // Initialize the application when the DOM is loaded
 document.addEventListener('DOMContentLoaded', init);
+
+// Function to send JSON data to the blob
+async function sendJsonToFunction(data, container, blob) {
+    try {
+        const url = `/api/overwrite_blob?container=${encodeURIComponent(container)}&blob=${encodeURIComponent(blob)}`;
+        
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            // alert("Blob overwritten successfully.");
+            return true
+        } else {
+            const errorText = await response.text();
+            console.error("Error response:", errorText);
+            alert(`Failed: ${response.status}`);
+            return false;
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert("An error occurred.");
+        return false;
+    }
+}
