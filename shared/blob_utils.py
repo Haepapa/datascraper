@@ -6,7 +6,7 @@ from azure.storage.blob.aio._download_async import StorageStreamDownloader
 
 BLOB_CONN_STR: str | None = os.getenv("AzureWebJobsStorage")
 BLOB_CONTAINER: str = "rssdata"
-BLOB_NAME: str | None = os.getenv("RSS_URLS_BLOB_NAME")
+BLOB_NAME: str | None = "urls.json"
 
 async def load_urls() -> list[dict[str, str]] | None:
     
