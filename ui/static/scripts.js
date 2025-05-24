@@ -172,7 +172,7 @@ function handleFormSubmit(e) {
         urlData.push({ id: newId, ...formData });
     }
     
-    // This is where you would send the data to your backend
+    // send the updated data to the backend
     console.log('Data ready to be sent to backend:', urlData);
     if (sendJsonToFunction(urlData, "rssdata", "urls.json")) {
         // Update the UI
