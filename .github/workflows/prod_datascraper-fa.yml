@@ -40,7 +40,7 @@ jobs:
           shopt -s dotglob extglob
           cp -r !(upload) upload/
           cd upload
-          zip -r ../release.zip . -x "*.git*" "*.venv*" "*.github*" "__pycache__/*"
+          zip -r ../release.zip . -x "*.git*" "*.venv*" "*.github*" "__pycache__/*" ".vscode/*" ".funcignore" ".gitignore" "README.md"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
