@@ -5,4 +5,5 @@
 azure-functions
 aiofiles
 aiohttp
+azure-storage
 azure-storage-blob
