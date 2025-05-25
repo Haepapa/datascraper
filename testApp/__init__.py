@@ -11,12 +11,9 @@ def main(req: HttpRequest) -> HttpResponse:
 
     try:
         import shared.blob_utils as bu
-    except ImportError:
+    except ImportError as e:
         logging.error("Failed to import shared.blob_utils. Ensure the shared directory is in the Python path.")
-        return HttpResponse(
-            "Error: Unable to import shared.blob_utils. Please check the function configuration.",
-            status_code=500
-        )
+        logging.error(str(e))
 
 
     name = req.params.get('name')
