@@ -34,6 +34,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt --target=".python_packages/lib/site-packages"
 
+      - name: List installed packages in .python_packages
+        run: |
+          echo "Listing contents of .python_packages/lib/site-packages:"
+          ls -al .python_packages/lib/site-packages
+
       - name: Zip artifact for deployment
         run: |
           mkdir upload
