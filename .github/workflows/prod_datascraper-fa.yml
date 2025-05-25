@@ -37,7 +37,8 @@ jobs:
       - name: Zip artifact for deployment
         run: |
           mkdir upload
-          cp -r . upload/
+          shopt -s extglob
+          cp -r !(upload) upload/
           cd upload
           zip -r ../release.zip . -x "*.git*" "*.venv*" "*.github*" "__pycache__/*"
 
