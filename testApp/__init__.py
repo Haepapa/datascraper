@@ -1,11 +1,12 @@
 import logging
-import shared.blob_utils as bu
+from common import timenow
 
 from azure.functions import HttpRequest, HttpResponse
 
 
 def main(req: HttpRequest) -> HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
+    logging.info(f"Current time: {timenow.TimeNow()}")
 
     name = req.params.get('name')
     if not name:
