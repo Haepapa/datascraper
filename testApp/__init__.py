@@ -11,10 +11,10 @@ def main(req: HttpRequest) -> HttpResponse:
     logging.info(f"Current time: {timenow.TimeNow()}")
 
     packages = sorted(dist.metadata['Name'] for dist in distributions())
-    a_packages = [pkg for pkg in packages if pkg.lower().startswith('a')]
+    # a_packages = [pkg for pkg in packages if pkg.lower().startswith('a')]
 
     logging.info("Packages starting with 'a':")
-    for pkg in a_packages:
+    for pkg in packages:
         logging.info(f"    {pkg}")
 
     try:
