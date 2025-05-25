@@ -1,7 +1,3 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/azure/functions-action
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-# More info on Python, GitHub Actions, and Azure Functions: https://aka.ms/python-webapps-actions
-
 name: Build and deploy Python project to Azure Function App - datascraper-fa
 
 on:
@@ -11,8 +7,8 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: "." # set this to the path to your web app project, defaults to the repository root
-  PYTHON_VERSION: "3.11" # set this to the python version to use (supports 3.6, 3.7, 3.8)
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: "."  # Root of your app
+  PYTHON_VERSION: "3.11"
 
 jobs:
   build:
@@ -24,28 +20,29 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python version
+      - name: Set up Python (for tooling)
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install dependencies into .python_packages
+      - name: Build dependencies in Azure Functions Docker image
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt --target=".python_packages/lib/site-packages"
-
-      - name: List installed packages in .python_packages
-        run: |
-          echo "Listing contents of .python_packages/lib/site-packages:"
-          ls -al .python_packages/lib/site-packages
+          docker run --rm \
+            -v "${{ github.workspace }}:/app" \
+            -w /app \
+            mcr.microsoft.com/azure-functions/python:4-python3.11 \
+            bash -c "
+              pip install --upgrade pip && \
+              pip install -r requirements.txt --target .python_packages/lib/site-packages
+            "
 
       - name: Zip artifact for deployment
         run: |
           mkdir upload
           shopt -s dotglob extglob
-          cp -r !(upload) upload/
+          cp -r !(upload|.git|.github|.venv|.vscode|.funcignore) upload/
           cd upload
-          zip -r ../release.zip . -x "*.git*" "*.venv*" "*.github*" "__pycache__/*"
+          zip -r ../release.zip . -x "*.git*" "*.venv*" "*.github*" "*.vscode*" "*.funcignore" "__pycache__/*"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -57,8 +54,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      id-token: write
+      contents: read
 
     steps:
       - name: Download artifact from build job
@@ -76,9 +73,8 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_AD91F7CC22DD47D5BD7F4AC157D89CB2 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_F0EFF101E2AD4C1A931101D4E5C4FDED }}
 
-      - name: "Deploy to Azure Functions"
+      - name: Deploy to Azure Functions
         uses: Azure/functions-action@v1
-        id: deploy-to-function
         with:
           app-name: "datascraper-fa"
           slot-name: "Production"
