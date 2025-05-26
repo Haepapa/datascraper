@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: "."  # Root of your app
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: "." # Root of your app
   PYTHON_VERSION: "3.11"
 
 jobs:
@@ -69,9 +69,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_9653AF349B11434FB560AFFAEDA83E5F }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_AD91F7CC22DD47D5BD7F4AC157D89CB2 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_F0EFF101E2AD4C1A931101D4E5C4FDED }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_F3D2257E13744D76AA07199ECBD32FBA }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_7F078C3B39B546448A51211E82BE1347 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_30419BF25745486CAAF9A40D00D4E286 }}
 
       - name: Deploy to Azure Functions
         uses: Azure/functions-action@v1
