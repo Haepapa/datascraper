@@ -3,6 +3,12 @@ resource "azurerm_resource_group" "rg" {
   location = var.location
 }
 
+resource "azurerm_user_assigned_identity" "example" {
+  location            = azurerm_resource_group.rg.location
+  name                = "${var.project_name}-mi"
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
 resource "azurerm_storage_account" "storage" {
   name                     = "${var.project_name}0sa"
   resource_group_name      = azurerm_resource_group.rg.name
@@ -17,6 +23,13 @@ resource "azurerm_service_plan" "plan" {
   resource_group_name = azurerm_resource_group.rg.name
   os_type             = "Linux"
   sku_name            = "Y1"
+}
+
+resource "azurerm_application_insights" "insite" {
+  name                = "${var.project_name}-ai"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  application_type    = "web"
 }
 
 resource "azurerm_linux_function_app" "functionapp" {
@@ -38,6 +51,8 @@ resource "azurerm_linux_function_app" "functionapp" {
   app_settings = {
     FUNCTIONS_WORKER_RUNTIME = "python"
     AzureWebJobsStorage      = azurerm_storage_account.storage.primary_connection_string
+    application_insights_connection_string = azurerm_application_insights.insite.connection_string
+    application_insights_key = azurerm_application_insights.insite.instrumentation_key
   }
 
   identity {
