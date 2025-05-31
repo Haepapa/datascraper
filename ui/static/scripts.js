@@ -29,14 +29,20 @@ let currentTableIndex = 0;
 let containerName = "data";
 let blobName = "urls.json";
 
-// Initialize the application
+/**
+ * Initializes the application by populating the table selector, rendering all URL tables, and setting up event listeners for user interactions.
+ */
 function init() {
   populateTableSelector();
   renderAllTables();
   setupEventListeners();
 }
 
-// Populate the table selector dropdown
+/**
+ * Populates the table selector dropdown with options for each URL table.
+ *
+ * Each option represents a table's title and is assigned its corresponding index as the value.
+ */
 function populateTableSelector() {
   tableSelector.innerHTML = "";
 
@@ -48,7 +54,11 @@ function populateTableSelector() {
   });
 }
 
-// Render all tables
+/**
+ * Renders all URL tables and their contents into the tables container.
+ *
+ * Creates a section for each table in {@link urlData}, including its title and a table element with headers and body. Each table's data is populated by calling {@link renderTableData} with the corresponding index.
+ */
 function renderAllTables() {
   tablesContainer.innerHTML = "";
 
@@ -91,7 +101,13 @@ function renderAllTables() {
   });
 }
 
-// Render data for a specific table
+/**
+ * Renders the rows for a specific URL table, displaying all records or an empty state if none exist.
+ *
+ * Updates the table body with each record's status, source, URL, and action buttons for editing or deleting. If the table has no records, shows an empty state with an option to add a new URL. Attaches event listeners to action buttons for editing and deleting records.
+ *
+ * @param {number} tableIndex - The index of the table to render.
+ */
 function renderTableData(tableIndex) {
   const tableData = urlData[tableIndex];
   const tbody = document.getElementById(`url-table-body-${tableIndex}`);
@@ -164,7 +180,11 @@ function renderTableData(tableIndex) {
   });
 }
 
-// Set up event listeners
+/**
+ * Attaches event listeners to UI elements for handling table selection, record addition, editing, deletion, and modal interactions.
+ *
+ * Sets up all necessary event handlers to enable user interaction with the URL tables and modals.
+ */
 function setupEventListeners() {
   // Table selector change
   tableSelector.addEventListener("change", (e) => {
@@ -198,7 +218,13 @@ function setupEventListeners() {
   });
 }
 
-// Open modal for adding a new record
+/**
+ * Opens the modal dialog for adding a new URL record to the specified table.
+ *
+ * Sets the modal title to reflect the target table, resets form fields to their default values, and displays the modal.
+ *
+ * @param {number} tableIndex - Index of the table to which the new URL will be added.
+ */
 function openAddModal(tableIndex) {
   modalTitle.textContent = `Add New URL to ${urlData[tableIndex].title}`;
   recordIdInput.value = "";
@@ -210,7 +236,14 @@ function openAddModal(tableIndex) {
   recordModal.style.display = "flex";
 }
 
-// Open modal for editing a record
+/**
+ * Opens the modal dialog for editing a URL record in the specified table.
+ *
+ * Populates the form fields with the selected record's data and displays the modal for editing.
+ *
+ * @param {string} id - The unique identifier of the record to edit.
+ * @param {number} tableIndex - The index of the table containing the record.
+ */
 function openEditModal(id, tableIndex) {
   const record = urlData[tableIndex].data.find((item) => item.id === id);
   if (!record) return;
@@ -225,13 +258,21 @@ function openEditModal(id, tableIndex) {
   recordModal.style.display = "flex";
 }
 
-// Close the modal
+/**
+ * Closes the record modal and resets the form fields.
+ */
 function closeModal() {
   recordModal.style.display = "none";
   recordForm.reset();
 }
 
-// Handle form submission (add or edit)
+/**
+ * Handles submission of the add/edit record form, updating or inserting a URL record in the selected table.
+ *
+ * Validates required fields, updates the appropriate table's data, persists changes to the backend, and refreshes the UI.
+ *
+ * @param {Event} e - The form submission event.
+ */
 function handleFormSubmit(e) {
   e.preventDefault();
 
@@ -283,21 +324,34 @@ function handleFormSubmit(e) {
   closeModal();
 }
 
-// Open delete confirmation modal
+/**
+ * Opens the delete confirmation modal for a specific record in a given table.
+ *
+ * @param {string} id - The ID of the record to be deleted.
+ * @param {number} tableIndex - The index of the table containing the record.
+ */
 function openDeleteConfirmation(id, tableIndex) {
   recordToDelete = id;
   tableToDeleteFrom = tableIndex;
   confirmDeleteModal.style.display = "flex";
 }
 
-// Close delete confirmation modal
+/**
+ * Closes the delete confirmation modal and clears the record and table targeted for deletion.
+ */
 function closeDeleteConfirmation() {
   confirmDeleteModal.style.display = "none";
   recordToDelete = null;
   tableToDeleteFrom = null;
 }
 
-// Delete a record
+/**
+ * Deletes a URL record from the specified table and updates the backend data store.
+ *
+ * Removes the record identified by {@link recordToDelete} from the table at {@link tableToDeleteFrom}, persists the change to the backend, and updates the UI accordingly.
+ *
+ * @remark If either {@link recordToDelete} or {@link tableToDeleteFrom} is null, the function exits without making changes.
+ */
 function deleteRecord() {
   if (recordToDelete === null || tableToDeleteFrom === null) return;
 
@@ -323,7 +377,12 @@ function deleteRecord() {
   );
 }
 
-// Helper function to escape HTML to prevent XSS
+/**
+ * Escapes special HTML characters in a string to prevent XSS vulnerabilities.
+ *
+ * @param {string} unsafe - The input string that may contain HTML special characters.
+ * @returns {string} The escaped string safe for insertion into HTML.
+ */
 function escapeHtml(unsafe) {
   return unsafe
     .replace(/&/g, "&amp;")
@@ -333,7 +392,14 @@ function escapeHtml(unsafe) {
     .replace(/'/g, "&#039;");
 }
 
-// Function to send JSON data to the blob
+/**
+ * Sends JSON data to the backend to overwrite a blob in the specified container.
+ *
+ * @param {Object} data - The JSON-serializable data to be sent.
+ * @param {string} container - The name of the storage container.
+ * @param {string} blob - The name of the blob to overwrite.
+ * @returns {Promise<boolean>} Resolves to true if the operation succeeds, or false if it fails.
+ */
 async function sendJsonToFunction(data, container, blob) {
   try {
     const url = `/api/overwrite_blob?container=${encodeURIComponent(

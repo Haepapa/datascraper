@@ -15,6 +15,11 @@ async def serve_static(file_path: Path, mime: str) -> func.HttpResponse:
         return func.HttpResponse("Not found", status_code=404)
     
 async def main(req: func.HttpRequest)  -> func.HttpResponse:
+    """
+    Handles HTTP requests for serving static files or dynamic HTML content.
+    
+    If a static file path is provided in the route parameters, returns the file with the appropriate MIME type. For GET requests without a static file, loads URL data from blob storage, injects it into an HTML template, and returns the rendered HTML. Returns a 405 response for unsupported HTTP methods.
+    """
     static_path: str | None = req.route_params.get("static_file")
     print(f"Static path: {static_path}")
     print(f"Request method: {req.method}")
