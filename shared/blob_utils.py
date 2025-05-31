@@ -5,11 +5,20 @@ from azure.storage.blob.aio._blob_client_async import BlobClient
 from azure.storage.blob.aio._download_async import StorageStreamDownloader
 
 BLOB_CONN_STR: str | None = os.getenv("AzureWebJobsStorage")
-BLOB_CONTAINER: str = "rssdata"
+BLOB_CONTAINER: str = "data"
 BLOB_NAME: str | None = "urls.json"
 
-async def load_urls() -> list[dict[str, str]] | None:
+async def load_urls() -> dict[str, list[dict[str, str]]] | None:
     
+    """
+    Asynchronously loads and parses JSON data from a specific Azure Blob Storage blob.
+    
+    Returns:
+        A dictionary containing the parsed JSON data if successful, or None if an error occurs during download or parsing.
+    
+    Raises:
+        ValueError: If the Azure Blob Storage connection string or blob name is not set.
+    """
     if BLOB_CONN_STR is None:
         raise ValueError("AzureWebJobsStorage connection string is not set.")
     if BLOB_NAME is None:
