@@ -31,7 +31,7 @@ async def main(req: func.HttpRequest)  -> func.HttpResponse:
     
     if req.method == "GET":
         # get urls from blob storage
-        url_data: list[dict[str, str]] | None = await bu.load_urls()
+        url_data: dict[str, list[dict[str, str]]] | None = await bu.load_urls()
 
         # get html template and add url data 
         async with aiofiles.open(Path(__file__).parent / "templates" / "index.html", mode="r") as f:

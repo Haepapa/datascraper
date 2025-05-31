@@ -1,80 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>URL Manager</title>
-    <link rel="stylesheet" href="/api/ui/styles.css">
+    <link rel="stylesheet" href="styles.css" />
     <script>
-        let urlData = {{ url_data }};
+      let urlData = {{ url_data }};
     </script>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <header>
-            <h1>URL Manager</h1>
-            <button id="addRecordBtn" class="btn btn-primary">Add New URL</button>
-        </header>
-
-        <main>
-            <h2>RSS</h2>
-            <div class="table-container">
-                <table id="urlTable">
-                    <thead>
-                        <tr>
-                            <th>Active</th>
-                            <th>Source</th>
-                            <th>URL</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="urlTableBody">
-                        <!-- Table rows will be added here dynamically -->
-                    </tbody>
-                </table>
-            </div>
-        </main>
-
-        <!-- Modal for adding/editing records -->
-        <div id="recordModal" class="modal">
-            <div class="modal-content">
-                <span class="close-btn">&times;</span>
-                <h2 id="modalTitle">Add New URL</h2>
-                <form id="recordForm">
-                    <input type="hidden" id="recordId">
-                    <div class="form-group">
-                        <label for="active">Active:</label>
-                        <input type="checkbox" id="active" checked>
-                    </div>
-                    <div class="form-group">
-                        <label for="source">Source:</label>
-                        <input type="text" id="source" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="url">URL:</label>
-                        <input type="url" id="url" required>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-save">Save</button>
-                        <button type="button" class="btn btn-cancel" id="cancelBtn">Cancel</button>
-                    </div>
-                </form>
-            </div>
+      <header>
+        <h1>URL Manager</h1>
+        <div class="header-actions">
+          <select id="tableSelector" class="table-selector">
+            <!-- Table options will be added dynamically -->
+          </select>
+          <button id="addRecordBtn" class="btn btn-primary">Add New URL</button>
         </div>
+      </header>
 
-        <!-- Confirmation modal for delete -->
-        <div id="confirmDeleteModal" class="modal">
-            <div class="modal-content">
-                <h2>Confirm Delete</h2>
-                <p>Are you sure you want to delete this URL?</p>
-                <div class="form-actions">
-                    <button id="confirmDeleteBtn" class="btn btn-delete btn-delete-conf">Delete</button>
-                    <button id="cancelDeleteBtn" class="btn btn-cancel">Cancel</button>
-                </div>
+      <main id="tablesContainer">
+        <!-- Tables will be added here dynamically -->
+      </main>
+
+      <!-- Modal for adding/editing records -->
+      <div id="recordModal" class="modal">
+        <div class="modal-content">
+          <span class="close-btn">&times;</span>
+          <h2 id="modalTitle">Add New URL</h2>
+          <form id="recordForm">
+            <input type="hidden" id="recordId" />
+            <input type="hidden" id="tableIndex" />
+            <div class="form-group">
+              <label for="active">Active:</label>
+              <input type="checkbox" id="active" checked />
             </div>
+            <div class="form-group">
+              <label for="source">Source:</label>
+              <input type="text" id="source" required />
+            </div>
+            <div class="form-group">
+              <label for="url">URL:</label>
+              <input type="url" id="url" required />
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-save">Save</button>
+              <button type="button" class="btn btn-cancel" id="cancelBtn">
+                Cancel
+              </button>
+            </div>
+          </form>
         </div>
+      </div>
+
+      <!-- Confirmation modal for delete -->
+      <div id="confirmDeleteModal" class="modal">
+        <div class="modal-content">
+          <h2>Confirm Delete</h2>
+          <p>Are you sure you want to delete this URL?</p>
+          <div class="form-actions">
+            <button id="confirmDeleteBtn" class="btn btn-delete">Delete</button>
+            <button id="cancelDeleteBtn" class="btn btn-cancel">Cancel</button>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <script src="/api/ui/scripts.js"></script>
-</body>
+    <script src="scripts.js"></script>
+  </body>
 </html>
