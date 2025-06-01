@@ -5,6 +5,9 @@
 - Storage Blob Data Contributor
 - Reader
 
+### Managed Identity
+Created to authenticate with GiHub actions.
+
 ## Setup
 
 This code assumes:
