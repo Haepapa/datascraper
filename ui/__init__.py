@@ -4,6 +4,7 @@ import aiofiles
 import shared.blob_utils as bu
 import json
 
+
 async def serve_static(file_path: Path, mime: str) -> func.HttpResponse:
     print(f"Serving static file: {file_path.resolve()}")
     print(f"Mime type: {mime}")
@@ -13,11 +14,12 @@ async def serve_static(file_path: Path, mime: str) -> func.HttpResponse:
         return func.HttpResponse(content, mimetype=mime)
     except FileNotFoundError:
         return func.HttpResponse("Not found", status_code=404)
-    
-async def main(req: func.HttpRequest)  -> func.HttpResponse:
+
+
+async def main(req: func.HttpRequest) -> func.HttpResponse:
     """
     Handles HTTP requests for serving static files or dynamic HTML content.
-    
+
     If a static file path is provided in the route parameters, returns the file with the appropriate MIME type. For GET requests without a static file, loads URL data from blob storage, injects it into an HTML template, and returns the rendered HTML. Returns a 405 response for unsupported HTTP methods.
     """
     static_path: str | None = req.route_params.get("static_file")
@@ -33,15 +35,16 @@ async def main(req: func.HttpRequest)  -> func.HttpResponse:
         }.get(ext, "text/plain")
         file_path: Path = Path(__file__).parent / "static" / static_path
         return await serve_static(file_path, mime)
-    
+
     if req.method == "GET":
         # get urls from blob storage
-        url_data: dict[str, list[dict[str, str]]] | None = await bu.load_urls()
+        url_data: list[dict[str, str | dict[str, str | int]]] | None = await bu.load_urls()
 
-        # get html template and add url data 
+        # get html template and add url data
         async with aiofiles.open(Path(__file__).parent / "templates" / "index.html", mode="r") as f:
             template: str = await f.read()
-        html: str = template.replace("{{ url_data }}", json.dumps(url_data, indent=2))
+        html: str = template.replace(
+            "{{ url_data }}", json.dumps(url_data, indent=2))
 
         # return html response
         return func.HttpResponse(html, mimetype="text/html")
