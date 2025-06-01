@@ -14,16 +14,14 @@ BLOB_NAME: str | None = "urls.json"
 async def load_urls(key: str | None = None) -> list[dict[str, str | dict[str, str | int]]] | None:
     """
     Asynchronously loads and parses JSON data from a specific Azure Blob Storage blob.
-    Optionally filters the returned list by the provided key.
-
-    Args:
-        key: Optional; if provided, only entries with this key will be returned.
-
-    Returns:
-        A list of dictionaries containing the parsed JSON data if successful, or None if an error occurs during download or parsing.
-
+    
+    If a key is provided, returns a list of items where the "key" field matches the given value. Returns None if no key is provided, or if an error occurs during download or parsing.
+    
     Raises:
         ValueError: If the Azure Blob Storage connection string or blob name is not set.
+    
+    Returns:
+        A list of dictionaries containing the filtered JSON data, or None on error or if no key is provided.
     """
     if BLOB_CONN_STR is None:
         raise ValueError("AzureWebJobsStorage connection string is not set.")
@@ -46,6 +44,17 @@ async def load_urls(key: str | None = None) -> list[dict[str, str | dict[str, st
 
 
 async def save_json_to_blob(data: list[dict[str, str]], container: str, blob: str) -> None:
+    """
+    Uploads a list of dictionaries as a JSON file to the specified Azure Blob Storage location.
+    
+    Args:
+        data: The list of dictionaries to serialize and upload as JSON.
+        container: The name of the Azure Blob Storage container.
+        blob: The name of the blob to create or overwrite.
+    
+    Raises:
+        ValueError: If the Azure Blob Storage connection string or blob name is not set.
+    """
     if BLOB_CONN_STR is None:
         raise ValueError("AzureWebJobsStorage connection string is not set.")
     if BLOB_NAME is None:
@@ -64,13 +73,9 @@ async def create_container_and_path(
     blob_path: str | None = None
 ) -> None:
     """
-    Ensures the specified container and optional path exist in the given Azure Blob Storage account.
-
-    Args:
-        connection_string (str): Azure Storage account connection string.
-        container_name (str): Name of the container to check/create.
-        path (str | None): Optional path (prefix) inside the container to check/create.
-                           Treated as a virtual folder (by uploading a zero-byte blob).
+    Ensures the Azure Blob Storage container exists and optionally creates a virtual folder path.
+    
+    If the container does not exist, it is created. If a blob path is provided, a zero-byte placeholder blob named `.keep` is uploaded to simulate the existence of a folder at that path.
     """
     async with BlobServiceClient.from_connection_string(BLOB_CONN_STR) as service:
         # Check/create container
@@ -104,14 +109,9 @@ async def save_to_blob(
     filename: str
 ) -> None:
     """
-    Fetches content from a URL and stores it as a blob in the specified container and folder.
-
-    Args:
-        url (str): The URL to fetch content from.
-        connection_string (str): Azure Storage account connection string.
-        container_name (str): Name of the target blob container.
-        folder (str): Virtual folder path inside the container (e.g., 'data/2025').
-        filename (str): Name of the blob file to create (e.g., 'example.json').
+    Fetches content from a URL and uploads it as a blob to a specified folder and filename in Azure Blob Storage.
+    
+    The function ensures the target container exists, retrieves the content from the given URL, and saves it as a blob under the specified folder and filename path within the container.
     """
     async with BlobServiceClient.from_connection_string(BLOB_CONN_STR) as service:
         container_client: ContainerClient = service.get_container_client(BLOB_CONTAINER)
