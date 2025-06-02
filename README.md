@@ -2,8 +2,11 @@
 
 ## Setup
 
-`uv venv --python 3.11`
-`uv pip insatll -r requirements.txt`
+```bash
+uv python install 3.11
+uv venv --python 3.11
+uv pip insatll -r requirements.txt
+```
 
 ### Mac
 
