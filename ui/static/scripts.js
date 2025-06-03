@@ -1,4 +1,16 @@
+// Password protection variables
+let isAuthenticated = false;
+let authenticationTimer = null;
+let currentChallenge = 0;
+
 // DOM Elements
+const passwordModal = document.getElementById('passwordModal');
+const passwordForm = document.getElementById('passwordForm');
+const passwordInput = document.getElementById('passwordInput');
+const challengeNumber = document.getElementById('challengeNumber');
+const passwordError = document.getElementById('passwordError');
+const mainContent = document.getElementById('mainContent');
+
 const tablesContainer = document.getElementById("tablesContainer");
 const tableSelector = document.getElementById("tableSelector");
 const addRecordBtn = document.getElementById("addRecordBtn");
@@ -33,9 +45,98 @@ let blobName = "urls.json";
  * Initializes the application by populating the table selector, rendering all URL tables, and setting up event listeners for user interactions.
  */
 function init() {
+  showPasswordChallenge();
+  setupPasswordEventListeners();
+
   populateTableSelector();
   renderAllTables();
   setupEventListeners();
+}
+
+
+// Generate and show password challenge
+function showPasswordChallenge() {
+    currentChallenge = Math.floor(Math.random() * 100) + 1; // Random number 1-100
+    challengeNumber.textContent = currentChallenge;
+    passwordModal.style.display = 'flex';
+    mainContent.style.display = 'none';
+    passwordInput.focus();
+    passwordError.style.display = 'none';
+    passwordInput.value = '';
+}
+
+// Setup password form event listeners
+function setupPasswordEventListeners() {
+    passwordForm.addEventListener('submit', handlePasswordSubmit);
+}
+
+// Handle password form submission
+function handlePasswordSubmit(e) {
+    e.preventDefault();
+    
+    const userAnswer = parseInt(passwordInput.value);
+    const correctAnswer = currentChallenge + 3;
+    
+    if (userAnswer === correctAnswer) {
+        // Correct answer
+        isAuthenticated = true;
+        passwordModal.style.display = 'none';
+        mainContent.style.display = 'block';
+        
+        // Initialize main app
+        initializeMainApp();
+        
+        // Set 5-minute timer to reset authentication
+        startAuthenticationTimer();
+        
+        passwordError.style.display = 'none';
+    } else {
+        // Incorrect answer
+        passwordError.style.display = 'block';
+        passwordInput.value = '';
+        passwordInput.focus();
+        
+        // Generate new challenge after wrong answer
+        setTimeout(() => {
+            showPasswordChallenge();
+        }, 2000);
+    }
+}
+
+// Start 5-minute authentication timer
+function startAuthenticationTimer() {
+    // Clear existing timer if any
+    if (authenticationTimer) {
+        clearTimeout(authenticationTimer);
+    }
+    
+    // Set new timer for 5 minutes (300,000 milliseconds)
+    authenticationTimer = setTimeout(() => {
+        resetAuthentication();
+    }, 300000);
+}
+
+// Reset authentication and show password challenge again
+function resetAuthentication() {
+    isAuthenticated = false;
+    if (authenticationTimer) {
+        clearTimeout(authenticationTimer);
+        authenticationTimer = null;
+    }
+    
+    // Close any open modals
+    recordModal.style.display = 'none';
+    confirmDeleteModal.style.display = 'none';
+    
+    // Show password challenge
+    showPasswordChallenge();
+}
+
+// Initialize the main application
+function initializeMainApp() {
+    populateTableSelector();
+    renderAllTables();
+    setupEventListeners();
 }
 
 /**
@@ -59,46 +160,176 @@ function populateTableSelector() {
  *
  * Creates a section for each table in {@link urlData}, including its title and a table element with headers and body. Each table's data is populated by calling {@link renderTableData} with the corresponding index.
  */
+
+// Render all tables
 function renderAllTables() {
-  tablesContainer.innerHTML = "";
-
-  urlData.forEach((tableData, tableIndex) => {
-    const tableSection = document.createElement("div");
-    tableSection.className = "table-section";
-    tableSection.id = `table-section-${tableIndex}`;
-
-    const tableTitle = document.createElement("h2");
-    tableTitle.className = "table-title";
-    tableTitle.textContent = tableData.title;
-
-    const tableContainer = document.createElement("div");
-    tableContainer.className = "table-container";
-
-    const table = document.createElement("table");
-    table.id = `url-table-${tableIndex}`;
-
-    const thead = document.createElement("thead");
-    thead.innerHTML = `
+    tablesContainer.innerHTML = '';
+    
+    urlData.forEach((tableData, tableIndex) => {
+        const tableSection = document.createElement('div');
+        tableSection.className = 'table-section';
+        tableSection.id = `table-section-${tableIndex}`;
+        
+        const tableTitle = document.createElement('h2');
+        tableTitle.className = 'table-title';
+        tableTitle.textContent = tableData.title;
+        
+        // Add search box
+        const searchContainer = document.createElement('div');
+        searchContainer.className = 'search-container';
+        searchContainer.innerHTML = `
+            <span class="search-icon">🔍</span>
+            <input type="search" class="search-input" id="search-input-${tableIndex}" 
+                placeholder="Search (min 3 characters)..." value="${tableData.searchTerm || ''}">
+        `;
+        
+        const tableContainer = document.createElement('div');
+        tableContainer.className = 'table-container';
+        
+        const table = document.createElement('table');
+        table.id = `url-table-${tableIndex}`;
+        
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
             <tr>
-                <th>Active</th>
-                <th>Source</th>
-                <th>URL</th>
+                <th data-column="active" data-table-index="${tableIndex}">
+                    Active
+                    <span class="sort-icon ${getSortIconClass(tableData, 'active')}"></span>
+                </th>
+                <th data-column="source" data-table-index="${tableIndex}">
+                    Source
+                    <span class="sort-icon ${getSortIconClass(tableData, 'source')}"></span>
+                </th>
+                <th data-column="url" data-table-index="${tableIndex}">
+                    URL
+                    <span class="sort-icon ${getSortIconClass(tableData, 'url')}"></span>
+                </th>
                 <th>Actions</th>
             </tr>
         `;
+        
+        const tbody = document.createElement('tbody');
+        tbody.id = `url-table-body-${tableIndex}`;
+        
+        table.appendChild(thead);
+        table.appendChild(tbody);
+        tableContainer.appendChild(table);
+        tableSection.appendChild(tableTitle);
+        tableSection.appendChild(searchContainer);
+        tableSection.appendChild(tableContainer);
+        tablesContainer.appendChild(tableSection);
+        
+        renderTableData(tableIndex);
+        
+        // Add event listeners for sorting
+        const headers = table.querySelectorAll('th[data-column]');
+        headers.forEach(header => {
+            header.addEventListener('click', () => {
+                const column = header.dataset.column;
+                const tableIndex = parseInt(header.dataset.tableIndex);
+                handleSort(column, tableIndex);
+            });
+        });
+        
+        // Add event listener for search
+        const searchInput = document.getElementById(`search-input-${tableIndex}`);
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value;
+            handleSearch(searchTerm, tableIndex);
+        });
+    });
+}
 
-    const tbody = document.createElement("tbody");
-    tbody.id = `url-table-body-${tableIndex}`;
 
-    table.appendChild(thead);
-    table.appendChild(tbody);
-    tableContainer.appendChild(table);
-    tableSection.appendChild(tableTitle);
-    tableSection.appendChild(tableContainer);
-    tablesContainer.appendChild(tableSection);
+// Get the appropriate sort icon class based on current sort state
+function getSortIconClass(tableData, column) {
+    if (tableData.sortColumn !== column) {
+        return 'sort-none';
+    }
+    return tableData.sortDirection === 'asc' ? 'sort-asc' : 'sort-desc';
+}
 
+// Handle sorting when a column header is clicked
+function handleSort(column, tableIndex) {
+    const tableData = urlData[tableIndex];
+    
+    // Toggle sort direction or set to ascending if it's a new column
+    if (tableData.sortColumn === column) {
+        tableData.sortDirection = tableData.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        tableData.sortColumn = column;
+        tableData.sortDirection = 'asc';
+    }
+    
     renderTableData(tableIndex);
-  });
+    
+    // Update sort icons
+    const table = document.getElementById(`url-table-${tableIndex}`);
+    const headers = table.querySelectorAll('th[data-column]');
+    
+    headers.forEach(header => {
+        const headerColumn = header.dataset.column;
+        const sortIcon = header.querySelector('.sort-icon');
+        
+        if (headerColumn === tableData.sortColumn) {
+            sortIcon.className = `sort-icon ${tableData.sortDirection === 'asc' ? 'sort-asc' : 'sort-desc'}`;
+        } else {
+            sortIcon.className = 'sort-icon sort-none';
+        }
+    });
+}
+
+// Handle search input
+function handleSearch(searchTerm, tableIndex) {
+    urlData[tableIndex].searchTerm = searchTerm;
+    renderTableData(tableIndex);
+}
+
+// Get filtered and sorted data for a table
+function getProcessedData(tableIndex) {
+    const tableData = urlData[tableIndex];
+    let processedData = [...tableData.data];
+    
+    // Apply search filter if search term is 3 or more characters
+    if (tableData.searchTerm && tableData.searchTerm.length >= 3) {
+        const searchTerm = tableData.searchTerm.toLowerCase();
+        processedData = processedData.filter(record => {
+            return (
+                (typeof record.active === 'boolean' && 
+                    (record.active ? 'yes' : 'no').includes(searchTerm)) ||
+                record.source.toLowerCase().includes(searchTerm) ||
+                record.url.toLowerCase().includes(searchTerm)
+            );
+        });
+    }
+    
+    // Apply sorting if a sort column is specified
+    if (tableData.sortColumn) {
+        processedData.sort((a, b) => {
+            let valueA, valueB;
+            
+            if (tableData.sortColumn === 'active') {
+                valueA = a.active;
+                valueB = b.active;
+            } else {
+                valueA = a[tableData.sortColumn].toLowerCase();
+                valueB = b[tableData.sortColumn].toLowerCase();
+            }
+            
+            if (valueA === valueB) return 0;
+            
+            let comparison = 0;
+            if (typeof valueA === 'boolean') {
+                comparison = valueA === valueB ? 0 : valueA ? -1 : 1;
+            } else {
+                comparison = valueA < valueB ? -1 : 1;
+            }
+            
+            return tableData.sortDirection === 'asc' ? comparison : -comparison;
+        });
+    }
+    
+    return processedData;
 }
 
 /**
@@ -109,75 +340,79 @@ function renderAllTables() {
  * @param {number} tableIndex - The index of the table to render.
  */
 function renderTableData(tableIndex) {
-  const tableData = urlData[tableIndex];
-  const tbody = document.getElementById(`url-table-body-${tableIndex}`);
-
-  if (!tbody) return;
-
-  tbody.innerHTML = "";
-
-  if (tableData.data.length === 0) {
-    const emptyRow = document.createElement("tr");
-    emptyRow.innerHTML = `
-            <td colspan="4" class="empty-state">
-                <p>No URLs found</p>
-                <button class="btn btn-primary empty-add-btn" data-table-index="${tableIndex}">Add Your First URL</button>
-            </td>
-        `;
-    tbody.appendChild(emptyRow);
-
-    // Add event listener to the empty state add button
-    const emptyAddBtn = tbody.querySelector(".empty-add-btn");
-    if (emptyAddBtn) {
-      emptyAddBtn.addEventListener("click", () => openAddModal(tableIndex));
+    const tableData = urlData[tableIndex];
+    const tbody = document.getElementById(`url-table-body-${tableIndex}`);
+    
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    const processedData = getProcessedData(tableIndex);
+    
+    if (processedData.length === 0) {
+        const emptyRow = document.createElement('tr');
+        
+        // Check if empty due to filtering or no data
+        if (tableData.searchTerm && tableData.searchTerm.length >= 3 && tableData.data.length > 0) {
+            emptyRow.innerHTML = `
+                <td colspan="4" class="empty-state">
+                    <p>No results found for "${tableData.searchTerm}"</p>
+                </td>
+            `;
+        } else {
+            emptyRow.innerHTML = `
+                <td colspan="4" class="empty-state">
+                    <p>No URLs found</p>
+                    <button class="btn btn-primary empty-add-btn" data-table-index="${tableIndex}">Add Your First URL</button>
+                </td>
+            `;
+            
+            // Add event listener to the empty state add button after rendering
+            setTimeout(() => {
+                const emptyAddBtn = tbody.querySelector('.empty-add-btn');
+                if (emptyAddBtn) {
+                    emptyAddBtn.addEventListener('click', () => openAddModal(tableIndex));
+                }
+            }, 0);
+        }
+        
+        tbody.appendChild(emptyRow);
+        return;
     }
-
-    return;
-  }
-
-  tableData.data.forEach((record) => {
-    const row = document.createElement("tr");
-    row.innerHTML = `
+    
+    processedData.forEach(record => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
             <td>
-                <span class="status-indicator ${
-                  record.active ? "status-active" : "status-inactive"
-                }"></span>
-                ${record.active ? "Yes" : "No"}
+                <span class="status-indicator ${record.active ? 'status-active' : 'status-inactive'}"></span>
+                ${record.active ? 'Yes' : 'No'}
             </td>
             <td>${escapeHtml(record.source)}</td>
-            <td><a href="${escapeHtml(
-              record.url
-            )}" target="_blank" style="color: var(--primary-color);">${escapeHtml(
-      record.url
-    )}</a></td>
+            <td><a href="${escapeHtml(record.url)}" target="_blank" style="color: var(--primary-color);">${escapeHtml(record.url)}</a></td>
             <td class="action-buttons">
-                <button class="btn btn-edit" data-id="${
-                  record.id
-                }" data-table-index="${tableIndex}">Edit</button>
-                <button class="btn btn-delete" data-id="${
-                  record.id
-                }" data-table-index="${tableIndex}">Delete</button>
+                <button class="btn btn-edit" data-id="${record.id}" data-table-index="${tableIndex}">Edit</button>
+                <button class="btn btn-delete" data-id="${record.id}" data-table-index="${tableIndex}">Delete</button>
             </td>
         `;
-    tbody.appendChild(row);
-  });
-
-  // Add event listeners to the edit and delete buttons
-  tbody.querySelectorAll(".btn-edit").forEach((button) => {
-    button.addEventListener("click", () => {
-      const id = parseInt(button.dataset.id);
-      const tableIndex = parseInt(button.dataset.tableIndex);
-      openEditModal(id, tableIndex);
+        tbody.appendChild(row);
     });
-  });
-
-  tbody.querySelectorAll(".btn-delete").forEach((button) => {
-    button.addEventListener("click", () => {
-      const id = parseInt(button.dataset.id);
-      const tableIndex = parseInt(button.dataset.tableIndex);
-      openDeleteConfirmation(id, tableIndex);
+    
+    // Add event listeners to the edit and delete buttons
+    tbody.querySelectorAll('.btn-edit').forEach(button => {
+        button.addEventListener('click', () => {
+            const id = parseInt(button.dataset.id);
+            const tableIndex = parseInt(button.dataset.tableIndex);
+            openEditModal(id, tableIndex);
+        });
     });
-  });
+    
+    tbody.querySelectorAll('.btn-delete').forEach(button => {
+        button.addEventListener('click', () => {
+            const id = parseInt(button.dataset.id);
+            const tableIndex = parseInt(button.dataset.tableIndex);
+            openDeleteConfirmation(id, tableIndex);
+        });
+    });
 }
 
 /**
