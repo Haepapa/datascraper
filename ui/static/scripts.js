@@ -1,4 +1,16 @@
+// Password protection variables
+let isAuthenticated = false;
+let authenticationTimer = null;
+let currentChallenge = 0;
+
 // DOM Elements
+const passwordModal = document.getElementById('passwordModal');
+const passwordForm = document.getElementById('passwordForm');
+const passwordInput = document.getElementById('passwordInput');
+const challengeNumber = document.getElementById('challengeNumber');
+const passwordError = document.getElementById('passwordError');
+const mainContent = document.getElementById('mainContent');
+
 const tablesContainer = document.getElementById("tablesContainer");
 const tableSelector = document.getElementById("tableSelector");
 const addRecordBtn = document.getElementById("addRecordBtn");
@@ -33,9 +45,98 @@ let blobName = "urls.json";
  * Initializes the application by populating the table selector, rendering all URL tables, and setting up event listeners for user interactions.
  */
 function init() {
+  showPasswordChallenge();
+  setupPasswordEventListeners();
+
   populateTableSelector();
   renderAllTables();
   setupEventListeners();
+}
+
+
+// Generate and show password challenge
+function showPasswordChallenge() {
+    currentChallenge = Math.floor(Math.random() * 100) + 1; // Random number 1-100
+    challengeNumber.textContent = currentChallenge;
+    passwordModal.style.display = 'flex';
+    mainContent.style.display = 'none';
+    passwordInput.focus();
+    passwordError.style.display = 'none';
+    passwordInput.value = '';
+}
+
+// Setup password form event listeners
+function setupPasswordEventListeners() {
+    passwordForm.addEventListener('submit', handlePasswordSubmit);
+}
+
+// Handle password form submission
+function handlePasswordSubmit(e) {
+    e.preventDefault();
+    
+    const userAnswer = parseInt(passwordInput.value);
+    const correctAnswer = currentChallenge + 3;
+    
+    if (userAnswer === correctAnswer) {
+        // Correct answer
+        isAuthenticated = true;
+        passwordModal.style.display = 'none';
+        mainContent.style.display = 'block';
+        
+        // Initialize main app
+        initializeMainApp();
+        
+        // Set 5-minute timer to reset authentication
+        startAuthenticationTimer();
+        
+        passwordError.style.display = 'none';
+    } else {
+        // Incorrect answer
+        passwordError.style.display = 'block';
+        passwordInput.value = '';
+        passwordInput.focus();
+        
+        // Generate new challenge after wrong answer
+        setTimeout(() => {
+            showPasswordChallenge();
+        }, 2000);
+    }
+}
+
+// Start 5-minute authentication timer
+function startAuthenticationTimer() {
+    // Clear existing timer if any
+    if (authenticationTimer) {
+        clearTimeout(authenticationTimer);
+    }
+    
+    // Set new timer for 5 minutes (300,000 milliseconds)
+    authenticationTimer = setTimeout(() => {
+        resetAuthentication();
+    }, 300000);
+}
+
+// Reset authentication and show password challenge again
+function resetAuthentication() {
+    isAuthenticated = false;
+    if (authenticationTimer) {
+        clearTimeout(authenticationTimer);
+        authenticationTimer = null;
+    }
+    
+    // Close any open modals
+    recordModal.style.display = 'none';
+    confirmDeleteModal.style.display = 'none';
+    
+    // Show password challenge
+    showPasswordChallenge();
+}
+
+// Initialize the main application
+function initializeMainApp() {
+    populateTableSelector();
+    renderAllTables();
+    setupEventListeners();
 }
 
 /**

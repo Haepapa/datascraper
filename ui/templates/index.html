@@ -10,7 +10,32 @@
     </script>
   </head>
   <body>
-    <div class="container">
+    <!-- Password Protection Modal -->
+    <div id="passwordModal" class="password-modal">
+      <div class="password-modal-content">
+        <h2>Access Required</h2>
+        <p>To access this application, please solve the following:</p>
+        <div class="password-challenge">
+          <p>
+            <span id="challengeNumber" class="challenge-number"></span>
+          </p>
+        </div>
+        <form id="passwordForm">
+          <div class="form-group">
+            <label for="passwordInput">Enter your answer:</label>
+            <input type="number" id="passwordInput" required autofocus />
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Enter</button>
+          </div>
+        </form>
+        <div id="passwordError" class="password-error" style="display: none">
+          Incorrect answer. Please try again.
+        </div>
+      </div>
+    </div>
+
+    <div class="container" id="mainContent" style="display: none">
       <header>
         <h1>URL Manager</h1>
         <div class="header-actions">
