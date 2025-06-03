@@ -181,7 +181,7 @@ function handleSort(column, tableIndex) {
 // Handle search input
 function handleSearch(searchTerm, tableIndex) {
     urlData[tableIndex].searchTerm = searchTerm;
-    renderTableData(urlData);
+    renderTableData(tableIndex);
 }
 
 // Get filtered and sorted data for a table
