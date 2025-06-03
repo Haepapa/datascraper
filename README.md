@@ -5,7 +5,7 @@
 ```bash
 uv python install 3.11
 uv venv --python 3.11
-uv pip insatll -r requirements.txt
+uv pip install -r requirements.txt
 ```
 
 ### Mac
