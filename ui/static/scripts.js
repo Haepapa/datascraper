@@ -11,24 +11,24 @@ const challengeNumber = document.getElementById('challengeNumber');
 const passwordError = document.getElementById('passwordError');
 const mainContent = document.getElementById('mainContent');
 
-const tablesContainer = document.getElementById("tablesContainer");
-const tableSelector = document.getElementById("tableSelector");
-const addRecordBtn = document.getElementById("addRecordBtn");
-const recordModal = document.getElementById("recordModal");
-const confirmDeleteModal = document.getElementById("confirmDeleteModal");
-const closeBtn = document.querySelector(".close-btn");
-const recordForm = document.getElementById("recordForm");
-const modalTitle = document.getElementById("modalTitle");
-const cancelBtn = document.getElementById("cancelBtn");
-const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
-const cancelDeleteBtn = document.getElementById("cancelDeleteBtn");
+const tablesContainer = document.getElementById('tablesContainer');
+const tableSelector = document.getElementById('tableSelector');
+const addRecordBtn = document.getElementById('addRecordBtn');
+const recordModal = document.getElementById('recordModal');
+const confirmDeleteModal = document.getElementById('confirmDeleteModal');
+const closeBtn = document.querySelector('.close-btn');
+const recordForm = document.getElementById('recordForm');
+const modalTitle = document.getElementById('modalTitle');
+const cancelBtn = document.getElementById('cancelBtn');
+const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
 
 // Form elements
-const recordIdInput = document.getElementById("recordId");
-const tableIndexInput = document.getElementById("tableIndex");
-const activeInput = document.getElementById("active");
-const sourceInput = document.getElementById("source");
-const urlInput = document.getElementById("url");
+const recordIdInput = document.getElementById('recordId');
+const tableIndexInput = document.getElementById('tableIndex');
+const activeInput = document.getElementById('active');
+const sourceInput = document.getElementById('source');
+const urlInput = document.getElementById('url');
 
 // Track the record to be deleted
 let recordToDelete = null;
@@ -45,14 +45,14 @@ let blobName = "urls.json";
  * Initializes the application by populating the table selector, rendering all URL tables, and setting up event listeners for user interactions.
  */
 function init() {
-  showPasswordChallenge();
-  setupPasswordEventListeners();
-
-  populateTableSelector();
-  renderAllTables();
-  setupEventListeners();
+    showPasswordChallenge();
+    setupPasswordEventListeners();
+    
+    // Only initialize main app if already authenticated
+    if (isAuthenticated) {
+        initializeMainApp();
+    }
 }
-
 
 // Generate and show password challenge
 function showPasswordChallenge() {
@@ -145,21 +145,15 @@ function initializeMainApp() {
  * Each option represents a table's title and is assigned its corresponding index as the value.
  */
 function populateTableSelector() {
-  tableSelector.innerHTML = "";
-
-  urlData.forEach((table, index) => {
-    const option = document.createElement("option");
-    option.value = index;
-    option.textContent = table.title;
-    tableSelector.appendChild(option);
-  });
+    tableSelector.innerHTML = '';
+    
+    urlData.forEach((table, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = table.title;
+        tableSelector.appendChild(option);
+    });
 }
-
-/**
- * Renders all URL tables and their contents into the tables container.
- *
- * Creates a section for each table in {@link urlData}, including its title and a table element with headers and body. Each table's data is populated by calling {@link renderTableData} with the corresponding index.
- */
 
 // Render all tables
 function renderAllTables() {
@@ -170,11 +164,28 @@ function renderAllTables() {
         tableSection.className = 'table-section';
         tableSection.id = `table-section-${tableIndex}`;
         
-        const tableTitle = document.createElement('h2');
-        tableTitle.className = 'table-title';
-        tableTitle.textContent = tableData.title;
+        // Table title with controls
+        const tableHeader = document.createElement('div');
+        tableHeader.innerHTML = `
+            <h2 class="table-title">
+                ${tableData.title}
+                <div class="section-controls">
+                    <button class="btn minimize-btn btn-small" id="dashboard-toggle-${tableIndex}">
+                        ${tableData.dashboardVisible ? 'Hide Stats' : 'Show Stats'}
+                    </button>
+                    <button class="btn minimize-btn btn-small" id="table-toggle-${tableIndex}">
+                        ${tableData.tableVisible ? 'Hide Table' : 'Show Table'}
+                    </button>
+                </div>
+            </h2>
+        `;
         
-        // Add search box
+        // Dashboard container
+        const dashboardContainer = document.createElement('div');
+        dashboardContainer.className = `dashboard-container ${tableData.dashboardVisible ? '' : 'hidden'}`;
+        dashboardContainer.id = `dashboard-${tableIndex}`;
+        
+        // Search container
         const searchContainer = document.createElement('div');
         searchContainer.className = 'search-container';
         searchContainer.innerHTML = `
@@ -183,8 +194,10 @@ function renderAllTables() {
                 placeholder="Search (min 3 characters)..." value="${tableData.searchTerm || ''}">
         `;
         
+        // Table container
         const tableContainer = document.createElement('div');
-        tableContainer.className = 'table-container';
+        tableContainer.className = `table-container ${tableData.tableVisible ? '' : 'hidden'}`;
+        tableContainer.id = `table-container-${tableIndex}`;
         
         const table = document.createElement('table');
         table.id = `url-table-${tableIndex}`;
@@ -214,12 +227,26 @@ function renderAllTables() {
         table.appendChild(thead);
         table.appendChild(tbody);
         tableContainer.appendChild(table);
-        tableSection.appendChild(tableTitle);
+        
+        // Assemble the section
+        tableSection.appendChild(tableHeader);
+        tableSection.appendChild(dashboardContainer);
         tableSection.appendChild(searchContainer);
         tableSection.appendChild(tableContainer);
         tablesContainer.appendChild(tableSection);
         
+        // Render dashboard and table data
+        renderDashboard(tableIndex);
         renderTableData(tableIndex);
+        
+        // Add event listeners for minimize/maximize buttons
+        document.getElementById(`dashboard-toggle-${tableIndex}`).addEventListener('click', () => {
+            toggleDashboard(tableIndex);
+        });
+        
+        document.getElementById(`table-toggle-${tableIndex}`).addEventListener('click', () => {
+            toggleTable(tableIndex);
+        });
         
         // Add event listeners for sorting
         const headers = table.querySelectorAll('th[data-column]');
@@ -240,6 +267,103 @@ function renderAllTables() {
     });
 }
 
+// Toggle dashboard visibility
+function toggleDashboard(tableIndex) {
+    const tableData = urlData[tableIndex];
+    const dashboard = document.getElementById(`dashboard-${tableIndex}`);
+    const toggleBtn = document.getElementById(`dashboard-toggle-${tableIndex}`);
+    
+    tableData.dashboardVisible = !tableData.dashboardVisible;
+    
+    if (tableData.dashboardVisible) {
+        dashboard.classList.remove('hidden');
+        toggleBtn.textContent = 'Hide Stats';
+    } else {
+        dashboard.classList.add('hidden');
+        toggleBtn.textContent = 'Show Stats';
+    }
+}
+
+// Toggle table visibility
+function toggleTable(tableIndex) {
+    const tableData = urlData[tableIndex];
+    const tableContainer = document.getElementById(`table-container-${tableIndex}`);
+    const toggleBtn = document.getElementById(`table-toggle-${tableIndex}`);
+    
+    tableData.tableVisible = !tableData.tableVisible;
+    
+    if (tableData.tableVisible) {
+        tableContainer.classList.remove('hidden');
+        toggleBtn.textContent = 'Hide Table';
+    } else {
+        tableContainer.classList.add('hidden');
+        toggleBtn.textContent = 'Show Table';
+    }
+}
+
+// Render dashboard with stats
+function renderDashboard(tableIndex) {
+    const dashboard = document.getElementById(`dashboard-${tableIndex}`);
+    const processedData = getProcessedData(tableIndex);
+    
+    // Calculate stats
+    const totalCount = processedData.length;
+    const activeCount = processedData.filter(item => item.active).length;
+    const inactiveCount = totalCount - activeCount;
+    
+    // Count by source
+    const sourceCounts = {};
+    processedData.forEach(item => {
+        sourceCounts[item.source] = (sourceCounts[item.source] || 0) + 1;
+    });
+    
+    // Sort sources by count
+    const sortedSources = Object.entries(sourceCounts)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 5); // Show top 5 sources
+    
+    const maxCount = Math.max(...Object.values(sourceCounts), 1);
+    
+    // Calculate pie chart percentage
+    const activePercentage = totalCount > 0 ? (activeCount / totalCount) * 100 : 0;
+    
+    dashboard.innerHTML = `
+        <div class="dashboard-header">
+            <h3 class="dashboard-title">Statistics</h3>
+        </div>
+        <div class="dashboard-content">
+            <div class="stat-card">
+                <span class="stat-number">${totalCount}</span>
+                <div class="stat-label">Total URLs</div>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-title">Active Status</div>
+                <div class="pie-chart" style="background: conic-gradient(var(--primary-color) 0deg ${activePercentage * 3.6}deg, var(--secondary-text) ${activePercentage * 3.6}deg 360deg);"></div>
+                <div style="text-align: center; margin-top: 8px; font-size: 11px;">
+                    <div style="color: var(--primary-color);">Active: ${activeCount}</div>
+                    <div style="color: var(--secondary-text);">Inactive: ${inactiveCount}</div>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-title">Top Sources</div>
+                <div class="bar-chart">
+                    ${sortedSources.map(([source, count]) => `
+                        <div class="bar-item">
+                            <div class="bar-label">${source}</div>
+                            <div class="bar-visual">
+                                <div class="bar-fill" style="width: ${(count / maxCount) * 100}%"></div>
+                            </div>
+                            <div class="bar-count">${count}</div>
+                        </div>
+                    `).join('')}
+                    ${sortedSources.length === 0 ? '<div style="text-align: center; color: var(--secondary-text); font-size: 12px;">No data</div>' : ''}
+                </div>
+            </div>
+        </div>
+    `;
+}
 
 // Get the appropriate sort icon class based on current sort state
 function getSortIconClass(tableData, column) {
@@ -262,6 +386,7 @@ function handleSort(column, tableIndex) {
     }
     
     renderTableData(tableIndex);
+    renderDashboard(tableIndex); // Update dashboard with sorted data
     
     // Update sort icons
     const table = document.getElementById(`url-table-${tableIndex}`);
@@ -283,6 +408,7 @@ function handleSort(column, tableIndex) {
 function handleSearch(searchTerm, tableIndex) {
     urlData[tableIndex].searchTerm = searchTerm;
     renderTableData(tableIndex);
+    renderDashboard(tableIndex); // Update dashboard with filtered data
 }
 
 // Get filtered and sorted data for a table
@@ -415,90 +541,71 @@ function renderTableData(tableIndex) {
     });
 }
 
-/**
- * Attaches event listeners to UI elements for handling table selection, record addition, editing, deletion, and modal interactions.
- *
- * Sets up all necessary event handlers to enable user interaction with the URL tables and modals.
- */
+// Set up event listeners
 function setupEventListeners() {
-  // Table selector change
-  tableSelector.addEventListener("change", (e) => {
-    currentTableIndex = parseInt(e.target.value);
-  });
-
-  // Add record button
-  addRecordBtn.addEventListener("click", () => openAddModal(currentTableIndex));
-
-  // Close modal button
-  closeBtn.addEventListener("click", closeModal);
-
-  // Cancel button in form
-  cancelBtn.addEventListener("click", closeModal);
-
-  // Form submission
-  recordForm.addEventListener("submit", handleFormSubmit);
-
-  // Delete confirmation
-  confirmDeleteBtn.addEventListener("click", deleteRecord);
-  cancelDeleteBtn.addEventListener("click", closeDeleteConfirmation);
-
-  // Close modal when clicking outside
-  window.addEventListener("click", (e) => {
-    if (e.target === recordModal) {
-      closeModal();
-    }
-    if (e.target === confirmDeleteModal) {
-      closeDeleteConfirmation();
-    }
-  });
+    // Table selector change
+    tableSelector.addEventListener('change', (e) => {
+        currentTableIndex = parseInt(e.target.value);
+    });
+    
+    // Add record button
+    addRecordBtn.addEventListener('click', () => openAddModal(currentTableIndex));
+    
+    // Close modal button
+    closeBtn.addEventListener('click', closeModal);
+    
+    // Cancel button in form
+    cancelBtn.addEventListener('click', closeModal);
+    
+    // Form submission
+    recordForm.addEventListener('submit', handleFormSubmit);
+    
+    // Delete confirmation
+    confirmDeleteBtn.addEventListener('click', deleteRecord);
+    cancelDeleteBtn.addEventListener('click', closeDeleteConfirmation);
+    
+    // Close modal when clicking outside
+    window.addEventListener('click', (e) => {
+        if (e.target === recordModal) {
+            closeModal();
+        }
+        if (e.target === confirmDeleteModal) {
+            closeDeleteConfirmation();
+        }
+    });
 }
 
-/**
- * Opens the modal dialog for adding a new URL record to the specified table.
- *
- * Sets the modal title to reflect the target table, resets form fields to their default values, and displays the modal.
- *
- * @param {number} tableIndex - Index of the table to which the new URL will be added.
- */
+// Open modal for adding a new record
 function openAddModal(tableIndex) {
-  modalTitle.textContent = `Add New URL to ${urlData[tableIndex].title}`;
-  recordIdInput.value = "";
-  tableIndexInput.value = tableIndex;
-  activeInput.checked = true;
-  sourceInput.value = "";
-  urlInput.value = "";
-
-  recordModal.style.display = "flex";
+    modalTitle.textContent = `Add New URL to ${urlData[tableIndex].title}`;
+    recordIdInput.value = '';
+    tableIndexInput.value = tableIndex;
+    activeInput.checked = true;
+    sourceInput.value = '';
+    urlInput.value = '';
+    
+    recordModal.style.display = 'flex';
 }
 
-/**
- * Opens the modal dialog for editing a URL record in the specified table.
- *
- * Populates the form fields with the selected record's data and displays the modal for editing.
- *
- * @param {string} id - The unique identifier of the record to edit.
- * @param {number} tableIndex - The index of the table containing the record.
- */
+// Open modal for editing a record
 function openEditModal(id, tableIndex) {
-  const record = urlData[tableIndex].data.find((item) => item.id === id);
-  if (!record) return;
-
-  modalTitle.textContent = `Edit URL in ${urlData[tableIndex].title}`;
-  recordIdInput.value = record.id;
-  tableIndexInput.value = tableIndex;
-  activeInput.checked = record.active;
-  sourceInput.value = record.source;
-  urlInput.value = record.url;
-
-  recordModal.style.display = "flex";
+    const record = urlData[tableIndex].data.find(item => item.id === id);
+    if (!record) return;
+    
+    modalTitle.textContent = `Edit URL in ${urlData[tableIndex].title}`;
+    recordIdInput.value = record.id;
+    tableIndexInput.value = tableIndex;
+    activeInput.checked = record.active;
+    sourceInput.value = record.source;
+    urlInput.value = record.url;
+    
+    recordModal.style.display = 'flex';
 }
 
-/**
- * Closes the record modal and resets the form fields.
- */
+// Close the modal
 function closeModal() {
-  recordModal.style.display = "none";
-  recordForm.reset();
+    recordModal.style.display = 'none';
+    recordForm.reset();
 }
 
 /**
@@ -556,6 +663,7 @@ function handleFormSubmit(e) {
   }
   // Update the UI
   renderTableData(tableIndex);
+  renderDashboard(tableIndex);
   closeModal();
 }
 
@@ -566,18 +674,18 @@ function handleFormSubmit(e) {
  * @param {number} tableIndex - The index of the table containing the record.
  */
 function openDeleteConfirmation(id, tableIndex) {
-  recordToDelete = id;
-  tableToDeleteFrom = tableIndex;
-  confirmDeleteModal.style.display = "flex";
+    recordToDelete = id;
+    tableToDeleteFrom = tableIndex;
+    confirmDeleteModal.style.display = 'flex';
 }
 
 /**
  * Closes the delete confirmation modal and clears the record and table targeted for deletion.
  */
 function closeDeleteConfirmation() {
-  confirmDeleteModal.style.display = "none";
-  recordToDelete = null;
-  tableToDeleteFrom = null;
+    confirmDeleteModal.style.display = 'none';
+    recordToDelete = null;
+    tableToDeleteFrom = null;
 }
 
 /**
@@ -601,6 +709,7 @@ function deleteRecord() {
   }
 
   renderTableData(tableToDeleteFrom);
+  renderDashboard(tableToDeleteFrom);
   closeDeleteConfirmation();
 
   // This is where you would send the delete request to your backend
@@ -619,12 +728,12 @@ function deleteRecord() {
  * @returns {string} The escaped string safe for insertion into HTML.
  */
 function escapeHtml(unsafe) {
-  return unsafe
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
 /**
@@ -666,4 +775,12 @@ async function sendJsonToFunction(data, container, blob) {
 }
 
 // Initialize the application when the DOM is loaded
-document.addEventListener("DOMContentLoaded", init);
+document.addEventListener('DOMContentLoaded', init);
+
+// Handle page visibility change to reset authentication when tab becomes visible
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && isAuthenticated) {
+        // Reset timer when user returns to tab
+        startAuthenticationTimer();
+    }
+});
