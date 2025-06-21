@@ -17,15 +17,15 @@ BLOB_NAME: str | None = "urls.json"
 
 async def load_urls(key: str | None = None) -> list[dict[str, str | dict[str, str | int]]] | None:
     """
-    Asynchronously loads and parses JSON data from a specific Azure Blob Storage blob.
-
-    If a key is provided, returns a list of items where the "key" field matches the given value. Returns None if no key is provided, or if an error occurs during download or parsing.
-
+    Asynchronously loads and parses JSON data from a designated Azure Blob Storage blob.
+    
+    If a key is provided, returns a list of items where the "key" field matches the given value. Returns all items if no key is specified. Returns None if an error occurs during download or parsing.
+    
     Raises:
         ValueError: If the Azure Blob Storage connection string or blob name is not set.
-
+    
     Returns:
-        A list of dictionaries containing the filtered JSON data, or None on error or if no key is provided.
+        A list of dictionaries containing the JSON data, optionally filtered by key, or None on error.
     """
     if BLOB_CONN_STR is None:
         raise ValueError("AzureWebJobsStorage connection string is not set.")
@@ -52,13 +52,13 @@ async def load_urls(key: str | None = None) -> list[dict[str, str | dict[str, st
 
 async def save_json_to_blob(data: list[dict[str, str | dict[str, str | int]]], container: str, blob: str) -> None:
     """
-    Uploads a list of dictionaries as a JSON file to the specified Azure Blob Storage location.
-
-    Args:
-        data: The list of dictionaries to serialize and upload as JSON.
-        container: The name of the Azure Blob Storage container.
-        blob: The name of the blob to create or overwrite.
-
+    Serialize a list of dictionaries to JSON and upload it to a specified blob in Azure Blob Storage.
+    
+    Parameters:
+        data (list[dict[str, str | dict[str, str | int]]]): The data to serialize and upload.
+        container (str): The target Azure Blob Storage container name.
+        blob (str): The target blob name within the container.
+    
     Raises:
         ValueError: If the Azure Blob Storage connection string or blob name is not set.
     """
@@ -121,8 +121,8 @@ async def save_to_blob(
 ) -> None:
     """
     Fetches content from a URL and uploads it as a blob to a specified folder and filename in Azure Blob Storage.
-
-    The function ensures the target container exists, retrieves the content from the given URL, and saves it as a blob under the specified folder and filename path within the container.
+    
+    If the content cannot be fetched using asynchronous HTTP requests, falls back to a synchronous request in a separate thread. If both attempts fail, increments an error counter for the URL in the associated metadata JSON blob.
     """
     async with BlobServiceClient.from_connection_string(BLOB_CONN_STR) as service:
         container_client: ContainerClient = service.get_container_client(
@@ -167,6 +167,12 @@ async def save_to_blob(
             print(f"Falling back to requests for URL: {url}")
 
             def fetch_with_requests():
+                """
+                Fetches the content of a URL synchronously using the `requests` library with custom headers and a 30-second timeout.
+                
+                Returns:
+                    bytes | None: The response content as bytes if the request is successful; otherwise, None if an error occurs.
+                """
                 try:
                     r = requests.get(url, headers=headers, timeout=30)
                     r.raise_for_status()
