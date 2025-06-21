@@ -1,3 +1,4 @@
+
 // Password protection variables
 let isAuthenticated = false;
 let authenticationTimer = null;
@@ -29,6 +30,7 @@ const tableIndexInput = document.getElementById('tableIndex');
 const activeInput = document.getElementById('active');
 const sourceInput = document.getElementById('source');
 const urlInput = document.getElementById('url');
+const errorsInput = document.getElementById('errors');
 
 // Track the record to be deleted
 let recordToDelete = null;
@@ -295,6 +297,7 @@ function toggleTable(tableIndex) {
     }
 }
 
+
 // Render dashboard with stats
 function renderDashboard(tableIndex) {
     const dashboard = document.getElementById(`dashboard-${tableIndex}`);
@@ -304,6 +307,7 @@ function renderDashboard(tableIndex) {
     const totalCount = processedData.length;
     const activeCount = processedData.filter(item => item.active).length;
     const inactiveCount = totalCount - activeCount;
+    const totalErrors = processedData.reduce((sum, item) => sum + (item.errors || 0), 0);
     
     // Count by source
     const sourceCounts = {};
@@ -321,41 +325,52 @@ function renderDashboard(tableIndex) {
     const activePercentage = totalCount > 0 ? (activeCount / totalCount) * 100 : 0;
     
     dashboard.innerHTML = `
-        <div class="dashboard-header">
-            <h3 class="dashboard-title">Statistics</h3>
-        </div>
-        <div class="dashboard-content">
-            <div class="stat-card">
-                <span class="stat-number">${totalCount}</span>
-                <div class="stat-label">Total URLs</div>
+    <div class="dashboard-header">
+        <h3 class="dashboard-title">Statistics</h3>
+    </div>
+    <div class="dashboard-content">
+        <div class="chart-container">
+            <div class="chart-title">Overview</div>
+            <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-around;">
+                <div class="stat-card" style="margin-bottom: 10px;">
+                    <span class="stat-number">${totalCount}</span>
+                    <div class="stat-label">Total URLs</div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" style="color: ${totalErrors > 0 ? 'var(--delete-color)' : 'var(--primary-color)'};">${totalErrors}</span>
+                    <div class="stat-label">Total Errors</div>
+                </div>
             </div>
-            
-            <div class="chart-container">
-                <div class="chart-title">Active Status</div>
+        </div>
+        
+        <div class="chart-container">
+            <div class="chart-title">Active Status</div>
+            <div style="flex: 1; display: flex; align-items: center; justify-content: center;">
                 <div class="pie-chart" style="background: conic-gradient(var(--primary-color) 0deg ${activePercentage * 3.6}deg, var(--secondary-text) ${activePercentage * 3.6}deg 360deg);"></div>
-                <div style="text-align: center; margin-top: 8px; font-size: 11px;">
-                    <div style="color: var(--primary-color);">Active: ${activeCount}</div>
-                    <div style="color: var(--secondary-text);">Inactive: ${inactiveCount}</div>
-                </div>
             </div>
-            
-            <div class="chart-container">
-                <div class="chart-title">Sources Distribution</div>
-                <div class="bar-chart">
-                    ${sortedSources.map(([source, count]) => `
-                        <div class="bar-item">
-                            <div class="bar-visual" style="height: ${Math.max((count / maxCount) * 80, 20)}px;">
-                                <div class="bar-fill" style="height: ${Math.max((count / maxCount) * 80, 20)}px;"></div>
-                            </div>
-                            <div class="bar-count">${count}</div>
-                            <div class="bar-label">${source}</div>
-                        </div>
-                    `).join('')}
-                    ${sortedSources.length === 0 ? '<div style="text-align: center; color: var(--secondary-text); font-size: 12px; padding: 20px;">No data</div>' : ''}
-                </div>
+            <div style="text-align: center; font-size: 11px;">
+                <div style="color: var(--primary-color);">Active: ${activeCount}</div>
+                <div style="color: var(--secondary-text);">Inactive: ${inactiveCount}</div>
             </div>
         </div>
-    `;
+        
+        <div class="chart-container">
+            <div class="chart-title">Sources Distribution</div>
+            <div class="bar-chart" style="flex: 1;">
+                ${sortedSources.map(([source, count]) => `
+                    <div class="bar-item">
+                        <div class="bar-visual" style="height: ${Math.max((count / maxCount) * 80, 20)}px;">
+                            <div class="bar-fill" style="height: ${Math.max((count / maxCount) * 80, 20)}px;"></div>
+                        </div>
+                        <div class="bar-count">${count}</div>
+                        <div class="bar-label">${source}</div>
+                    </div>
+                `).join('')}
+                ${sortedSources.length === 0 ? '<div style="text-align: center; color: var(--secondary-text); font-size: 12px; padding: 20px;">No data</div>' : ''}
+            </div>
+        </div>
+    </div>
+`;
 }
 
 // Get the appropriate sort icon class based on current sort state
@@ -575,6 +590,7 @@ function openAddModal(tableIndex) {
     activeInput.checked = true;
     sourceInput.value = '';
     urlInput.value = '';
+    errorsInput.value = 0;
     
     recordModal.style.display = 'flex';
 }
@@ -590,6 +606,7 @@ function openEditModal(id, tableIndex) {
     activeInput.checked = record.active;
     sourceInput.value = record.source;
     urlInput.value = record.url;
+    errorsInput.value = record.errors;
     
     recordModal.style.display = 'flex';
 }
@@ -607,12 +624,13 @@ function handleFormSubmit(e) {
     const formData = {
         active: activeInput.checked,
         source: sourceInput.value.trim(),
-        url: urlInput.value.trim()
+        url: urlInput.value.trim(),
+        errors: parseInt(errorsInput.value) || 0
     };
     
     // Validate form data
-    if (!formData.source || !formData.url) {
-        alert('Please fill in all fields');
+    if (!formData.source || !formData.url || formData.errors < 0) {
+        alert('Please fill in all fields correctly');
         return;
     }
     
