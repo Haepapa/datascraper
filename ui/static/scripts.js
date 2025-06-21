@@ -37,13 +37,7 @@ let tableToDeleteFrom = null;
 // Current selected table index
 let currentTableIndex = 0;
 
-// Storage Variables
-let containerName = "data";
-let blobName = "urls.json";
-
-/**
- * Starts the application by displaying the password challenge and setting up authentication event listeners. If the user is already authenticated, initializes the main app UI.
- */
+// Initialize the application
 function init() {
     showPasswordChallenge();
     setupPasswordEventListeners();
@@ -54,9 +48,7 @@ function init() {
     }
 }
 
-/**
- * Displays the password challenge modal with a new random challenge number and resets related UI elements.
- */
+// Generate and show password challenge
 function showPasswordChallenge() {
     currentChallenge = Math.floor(Math.random() * 100) + 1; // Random number 1-100
     challengeNumber.textContent = currentChallenge;
@@ -141,11 +133,7 @@ function initializeMainApp() {
     setupEventListeners();
 }
 
-/**
- * Fills the table selector dropdown with options for each available URL table.
- *
- * Each dropdown option displays the table's title and uses its index as the value, allowing users to select which table to view or manage.
- */
+// Populate the table selector dropdown
 function populateTableSelector() {
     tableSelector.innerHTML = '';
     
@@ -157,11 +145,7 @@ function populateTableSelector() {
     });
 }
 
-/**
- * Renders all URL tables and their associated dashboards in the UI.
- *
- * For each table, creates and displays the section containing the table title, dashboard with statistics, search input, and the URL records table. Adds controls to toggle the visibility of the dashboard and table, and sets up event listeners for sorting, searching, and toggling actions.
- */
+// Render all tables
 function renderAllTables() {
     tablesContainer.innerHTML = '';
     
@@ -223,6 +207,10 @@ function renderAllTables() {
                     URL
                     <span class="sort-icon ${getSortIconClass(tableData, 'url')}"></span>
                 </th>
+                <th data-column="errors" data-table-index="${tableIndex}">
+                    Errors
+                    <span class="sort-icon ${getSortIconClass(tableData, 'errors')}"></span>
+                </th>
                 <th>Actions</th>
             </tr>
         `;
@@ -273,10 +261,7 @@ function renderAllTables() {
     });
 }
 
-/**
- * Toggles the visibility of the dashboard section for a specific URL table.
- * Updates both the dashboard display and the toggle button label based on the new visibility state.
- */
+// Toggle dashboard visibility
 function toggleDashboard(tableIndex) {
     const tableData = urlData[tableIndex];
     const dashboard = document.getElementById(`dashboard-${tableIndex}`);
@@ -293,11 +278,7 @@ function toggleDashboard(tableIndex) {
     }
 }
 
-/**
- * Toggles the visibility of the URL table for the specified table index.
- * Updates the UI and button label to reflect the current visibility state.
- * @param {number} tableIndex - The index of the table to toggle.
- */
+// Toggle table visibility
 function toggleTable(tableIndex) {
     const tableData = urlData[tableIndex];
     const tableContainer = document.getElementById(`table-container-${tableIndex}`);
@@ -314,10 +295,7 @@ function toggleTable(tableIndex) {
     }
 }
 
-/**
- * Renders the statistics dashboard for a specific URL table, displaying total URLs, active/inactive counts with a pie chart, and a bar chart of the top five sources.
- * @param {number} tableIndex - The index of the table for which to render the dashboard.
- */
+// Render dashboard with stats
 function renderDashboard(tableIndex) {
     const dashboard = document.getElementById(`dashboard-${tableIndex}`);
     const processedData = getProcessedData(tableIndex);
@@ -333,10 +311,9 @@ function renderDashboard(tableIndex) {
         sourceCounts[item.source] = (sourceCounts[item.source] || 0) + 1;
     });
     
-    // Sort sources by count
+    // Sort sources by count (descending) and show all sources
     const sortedSources = Object.entries(sourceCounts)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, 5); // Show top 5 sources
+        .sort(([,a], [,b]) => b - a);
     
     const maxCount = Math.max(...Object.values(sourceCounts), 1);
     
@@ -363,30 +340,25 @@ function renderDashboard(tableIndex) {
             </div>
             
             <div class="chart-container">
-                <div class="chart-title">Top Sources</div>
+                <div class="chart-title">Sources Distribution</div>
                 <div class="bar-chart">
                     ${sortedSources.map(([source, count]) => `
                         <div class="bar-item">
-                            <div class="bar-label">${source}</div>
-                            <div class="bar-visual">
-                                <div class="bar-fill" style="width: ${(count / maxCount) * 100}%"></div>
+                            <div class="bar-visual" style="height: ${Math.max((count / maxCount) * 80, 20)}px;">
+                                <div class="bar-fill" style="height: ${Math.max((count / maxCount) * 80, 20)}px;"></div>
                             </div>
                             <div class="bar-count">${count}</div>
+                            <div class="bar-label">${source}</div>
                         </div>
                     `).join('')}
-                    ${sortedSources.length === 0 ? '<div style="text-align: center; color: var(--secondary-text); font-size: 12px;">No data</div>' : ''}
+                    ${sortedSources.length === 0 ? '<div style="text-align: center; color: var(--secondary-text); font-size: 12px; padding: 20px;">No data</div>' : ''}
                 </div>
             </div>
         </div>
     `;
 }
 
-/**
- * Returns the CSS class for the sort icon based on the current sort column and direction.
- * @param {Object} tableData - The table's state, including current sort column and direction.
- * @param {string} column - The column name to check against the current sort state.
- * @return {string} The CSS class representing the sort icon state: 'sort-none', 'sort-asc', or 'sort-desc'.
- */
+// Get the appropriate sort icon class based on current sort state
 function getSortIconClass(tableData, column) {
     if (tableData.sortColumn !== column) {
         return 'sort-none';
@@ -394,12 +366,7 @@ function getSortIconClass(tableData, column) {
     return tableData.sortDirection === 'asc' ? 'sort-asc' : 'sort-desc';
 }
 
-/**
- * Handles sorting of a table's data when a column header is clicked.
- * Updates the sort direction or column, re-renders the table and dashboard, and refreshes sort icons.
- * @param {string} column - The column key to sort by.
- * @param {number} tableIndex - The index of the table to sort.
- */
+// Handle sorting when a column header is clicked
 function handleSort(column, tableIndex) {
     const tableData = urlData[tableIndex];
     
@@ -430,11 +397,7 @@ function handleSort(column, tableIndex) {
     });
 }
 
-/**
- * Filters the records in the specified table based on the search term and updates both the table view and dashboard statistics.
- * @param {string} searchTerm - The term to filter table records by.
- * @param {number} tableIndex - The index of the table to apply the search on.
- */
+// Handle search input
 function handleSearch(searchTerm, tableIndex) {
     urlData[tableIndex].searchTerm = searchTerm;
     renderTableData(tableIndex);
@@ -454,7 +417,8 @@ function getProcessedData(tableIndex) {
                 (typeof record.active === 'boolean' && 
                     (record.active ? 'yes' : 'no').includes(searchTerm)) ||
                 record.source.toLowerCase().includes(searchTerm) ||
-                record.url.toLowerCase().includes(searchTerm)
+                record.url.toLowerCase().includes(searchTerm) ||
+                record.errors.toString().includes(searchTerm)
             );
         });
     }
@@ -467,6 +431,9 @@ function getProcessedData(tableIndex) {
             if (tableData.sortColumn === 'active') {
                 valueA = a.active;
                 valueB = b.active;
+            } else if (tableData.sortColumn === 'errors') {
+                valueA = a.errors;
+                valueB = b.errors;
             } else {
                 valueA = a[tableData.sortColumn].toLowerCase();
                 valueB = b[tableData.sortColumn].toLowerCase();
@@ -488,13 +455,7 @@ function getProcessedData(tableIndex) {
     return processedData;
 }
 
-/**
- * Renders the table body for a specific URL table, displaying filtered and sorted records or an appropriate empty state.
- *
- * Shows each record's active status, source, URL link, and action buttons for editing or deleting. If no records are present or match the search, displays a message and, if applicable, an option to add a new URL. Attaches event listeners to action buttons for editing and deleting records.
- *
- * @param {number} tableIndex - Index of the table to render.
- */
+// Render data for a specific table
 function renderTableData(tableIndex) {
     const tableData = urlData[tableIndex];
     const tbody = document.getElementById(`url-table-body-${tableIndex}`);
@@ -511,13 +472,13 @@ function renderTableData(tableIndex) {
         // Check if empty due to filtering or no data
         if (tableData.searchTerm && tableData.searchTerm.length >= 3 && tableData.data.length > 0) {
             emptyRow.innerHTML = `
-                <td colspan="4" class="empty-state">
+                <td colspan="5" class="empty-state">
                     <p>No results found for "${tableData.searchTerm}"</p>
                 </td>
             `;
         } else {
             emptyRow.innerHTML = `
-                <td colspan="4" class="empty-state">
+                <td colspan="5" class="empty-state">
                     <p>No URLs found</p>
                     <button class="btn btn-primary empty-add-btn" data-table-index="${tableIndex}">Add Your First URL</button>
                 </td>
@@ -545,6 +506,7 @@ function renderTableData(tableIndex) {
             </td>
             <td>${escapeHtml(record.source)}</td>
             <td><a href="${escapeHtml(record.url)}" target="_blank" style="color: var(--primary-color);">${escapeHtml(record.url)}</a></td>
+            <td style="text-align: center; color: ${record.errors > 0 ? 'var(--delete-color)' : 'var(--secondary-text)'};">${record.errors}</td>
             <td class="action-buttons">
                 <button class="btn btn-edit" data-id="${record.id}" data-table-index="${tableIndex}">Edit</button>
                 <button class="btn btn-delete" data-id="${record.id}" data-table-index="${tableIndex}">Delete</button>
@@ -571,9 +533,7 @@ function renderTableData(tableIndex) {
     });
 }
 
-/**
- * Attaches event listeners for UI interactions, including table selection, record addition, modal controls, form submission, and delete confirmation.
- */
+// Set up event listeners
 function setupEventListeners() {
     // Table selector change
     tableSelector.addEventListener('change', (e) => {
@@ -607,10 +567,7 @@ function setupEventListeners() {
     });
 }
 
-/**
- * Opens the modal dialog for adding a new URL record to the specified table.
- * @param {number} tableIndex - The index of the table to which the new URL will be added.
- */
+// Open modal for adding a new record
 function openAddModal(tableIndex) {
     modalTitle.textContent = `Add New URL to ${urlData[tableIndex].title}`;
     recordIdInput.value = '';
@@ -622,11 +579,7 @@ function openAddModal(tableIndex) {
     recordModal.style.display = 'flex';
 }
 
-/**
- * Opens the modal dialog for editing an existing URL record in the specified table, pre-filling the form with the record's current data.
- * @param {string|number} id - The unique identifier of the record to edit.
- * @param {number} tableIndex - The index of the table containing the record.
- */
+// Open modal for editing a record
 function openEditModal(id, tableIndex) {
     const record = urlData[tableIndex].data.find(item => item.id === id);
     if (!record) return;
@@ -641,132 +594,87 @@ function openEditModal(id, tableIndex) {
     recordModal.style.display = 'flex';
 }
 
-/**
- * Closes the record modal and resets the form fields.
- */
+// Close the modal
 function closeModal() {
     recordModal.style.display = 'none';
     recordForm.reset();
 }
 
-/**
- * Processes the add/edit record form submission, updating or inserting a URL record in the selected table.
- *
- * Validates required fields, updates the relevant table's data, persists changes to the backend, and refreshes the table and dashboard UI.
- * Alerts the user if required fields are missing.
- * 
- * @param {Event} e - The form submission event.
- */
+// Handle form submission (add or edit)
 function handleFormSubmit(e) {
-  e.preventDefault();
-
-  const formData = {
-    active: activeInput.checked,
-    source: sourceInput.value.trim(),
-    url: urlInput.value.trim(),
-  };
-
-  // Validate form data
-  if (!formData.source || !formData.url) {
-    alert("Please fill in all fields");
-    return;
-  }
-
-  const tableIndex = parseInt(tableIndexInput.value);
-  const recordId = recordIdInput.value;
-  let updatedUrlData = urlData;
-
-  if (recordId) {
-    // Edit existing record
-    const id = parseInt(recordId);
-    const index = updatedUrlData[tableIndex].data.findIndex(
-      (item) => item.id === id
-    );
-
-    if (index !== -1) {
-      updatedUrlData[tableIndex].data[index] = {
-        ...updatedUrlData[tableIndex].data[index],
-        ...formData,
-      };
+    e.preventDefault();
+    
+    const formData = {
+        active: activeInput.checked,
+        source: sourceInput.value.trim(),
+        url: urlInput.value.trim()
+    };
+    
+    // Validate form data
+    if (!formData.source || !formData.url) {
+        alert('Please fill in all fields');
+        return;
     }
-  } else {
-    // Add new record
-    const newId =
-      updatedUrlData[tableIndex].data.length > 0
-        ? Math.max(...updatedUrlData[tableIndex].data.map((item) => item.id)) +
-          1
-        : 1;
-    updatedUrlData[tableIndex].data.push({ id: newId, ...formData });
-  }
-
-  // Send updated data to the backend
-  if (sendJsonToFunction(updatedUrlData, containerName, blobName)) {
-    urlData = updatedUrlData;
-  }
-  // Update the UI
-  renderTableData(tableIndex);
-  renderDashboard(tableIndex);
-  closeModal();
+    
+    const tableIndex = parseInt(tableIndexInput.value);
+    const recordId = recordIdInput.value;
+    
+    if (recordId) {
+        // Edit existing record
+        const id = parseInt(recordId);
+        const index = urlData[tableIndex].data.findIndex(item => item.id === id);
+        
+        if (index !== -1) {
+            urlData[tableIndex].data[index] = { ...urlData[tableIndex].data[index], ...formData };
+        }
+    } else {
+        // Add new record
+        const newId = urlData[tableIndex].data.length > 0 
+            ? Math.max(...urlData[tableIndex].data.map(item => item.id)) + 1 
+            : 1;
+        urlData[tableIndex].data.push({ id: newId, ...formData });
+    }
+    
+    // Update the UI
+    renderTableData(tableIndex);
+    renderDashboard(tableIndex); // Update dashboard after data change
+    closeModal();
+    
+    // This is where you would send the data to your backend
+    console.log('Data ready to be sent to backend:', urlData);
 }
 
-/**
- * Displays the delete confirmation modal for the specified record in the given table.
- *
- * @param {string} id - The unique identifier of the record to delete.
- * @param {number} tableIndex - The index of the table containing the record.
- */
+// Open delete confirmation modal
 function openDeleteConfirmation(id, tableIndex) {
     recordToDelete = id;
     tableToDeleteFrom = tableIndex;
     confirmDeleteModal.style.display = 'flex';
 }
 
-/**
- * Hides the delete confirmation modal and resets the deletion target state.
- */
+// Close delete confirmation modal
 function closeDeleteConfirmation() {
     confirmDeleteModal.style.display = 'none';
     recordToDelete = null;
     tableToDeleteFrom = null;
 }
 
-/**
- * Removes a URL record from the specified table, updates the backend, and refreshes the UI.
- *
- * If no record or table is selected for deletion, the function exits without changes.
- */
+// Delete a record
 function deleteRecord() {
-  if (recordToDelete === null || tableToDeleteFrom === null) return;
-
-  let updatedUrlData = urlData;
-  updatedUrlData[tableToDeleteFrom].data = urlData[
-    tableToDeleteFrom
-  ].data.filter((item) => item.id !== recordToDelete);
-
-  console.log("URL data after deletion:", urlData);
-  if (sendJsonToFunction(updatedUrlData, containerName, blobName)) {
-    urlData = updatedUrlData;
-  }
-
-  renderTableData(tableToDeleteFrom);
-  renderDashboard(tableToDeleteFrom);
-  closeDeleteConfirmation();
-
-  // This is where you would send the delete request to your backend
-  console.log(
-    "Delete request ready to be sent for ID:",
-    recordToDelete,
-    "from table:",
-    tableToDeleteFrom
-  );
+    if (recordToDelete === null || tableToDeleteFrom === null) return;
+    
+    urlData[tableToDeleteFrom].data = urlData[tableToDeleteFrom].data.filter(
+        item => item.id !== recordToDelete
+    );
+    
+    renderTableData(tableToDeleteFrom);
+    renderDashboard(tableToDeleteFrom); // Update dashboard after deletion
+    closeDeleteConfirmation();
+    
+    // This is where you would send the delete request to your backend
+    console.log('Delete request ready to be sent for ID:', recordToDelete, 'from table:', tableToDeleteFrom);
 }
 
-/**
- * Escapes special HTML characters in a string to prevent XSS vulnerabilities.
- *
- * @param {string} unsafe - The input string that may contain HTML special characters.
- * @returns {string} The escaped string safe for insertion into HTML.
- */
+// Helper function to escape HTML to prevent XSS
 function escapeHtml(unsafe) {
     return unsafe
         .replace(/&/g, "&amp;")

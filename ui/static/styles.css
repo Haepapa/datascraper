@@ -456,52 +456,86 @@ input[type="checkbox"] {
 
 .bar-chart {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  min-height: 120px;
+  align-items: flex-end;
+}
+
+.bar-chart::-webkit-scrollbar {
+  height: 6px;
+}
+
+.bar-chart::-webkit-scrollbar-track {
+  background: #333;
+  border-radius: 3px;
+}
+
+.bar-chart::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 3px;
+}
+
+.bar-chart::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-hover);
 }
 
 .bar-item {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-}
-
-.bar-label {
-  font-size: 12px;
-  color: var(--text-color);
   min-width: 60px;
-  text-align: right;
+  flex-shrink: 0;
+  height: 140px; /* Fixed height container */
+  justify-content: flex-end; /* Align content to bottom */
 }
 
 .bar-visual {
-  flex: 1;
-  height: 20px;
+  width: 40px;
   background-color: #333;
-  border-radius: 10px;
+  border-radius: 4px 4px 0 0;
   position: relative;
-  overflow: hidden;
+  margin-bottom: 8px;
+  min-height: 20px;
+  max-height: 80px;
 }
 
 .bar-fill {
-  height: 100%;
+  width: 100%;
   background-color: var(--primary-color);
-  border-radius: 10px;
-  transition: width 0.3s ease;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.3s ease;
+  position: absolute;
+  bottom: 0;
+}
+
+.bar-label {
+  font-size: 11px;
+  color: var(--text-color);
+  text-align: center;
+  word-break: break-word;
+  max-width: 60px;
+  line-height: 1.2;
+  height: 40px; /* Fixed height for labels */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  order: 3; /* Label at bottom */
 }
 
 .bar-count {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--secondary-text);
-  min-width: 20px;
-  text-align: left;
+  text-align: center;
+  margin-top: 4px;
+  order: 2; /* Count in middle */
 }
 
 /* Search box */
 .search-container {
   margin-bottom: 15px;
-  display: flex;
-  align-items: center;
-  gap: 0.5em;
+  position: relative;
 }
 
 .search-input {
@@ -594,6 +628,25 @@ input[type="checkbox"] {
   .section-controls {
     flex-direction: column;
     gap: 5px;
+  }
+
+  .bar-chart {
+    gap: 8px;
+  }
+
+  .bar-item {
+    min-width: 50px;
+  }
+
+  .bar-visual {
+    width: 40px;
+    background-color: #333;
+    border-radius: 4px 4px 0 0;
+    position: relative;
+    margin-bottom: 8px;
+    min-height: 20px;
+    max-height: 80px;
+    order: 1; /* Ensure bar comes first */
   }
 }
 
