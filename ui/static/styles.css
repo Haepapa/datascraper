@@ -439,7 +439,8 @@ input[type="checkbox"] {
   border: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  height: 100%; /* Fill full height */
+  height: 100%;
+  overflow: hidden; /* Prevent container from expanding */
 }
 
 .chart-title {
@@ -464,6 +465,7 @@ input[type="checkbox"] {
   padding-bottom: 10px;
   min-height: 120px;
   align-items: flex-end;
+  flex: 1;
 }
 
 .bar-chart::-webkit-scrollbar {
@@ -490,8 +492,8 @@ input[type="checkbox"] {
   align-items: center;
   min-width: 60px;
   flex-shrink: 0;
-  height: 140px; /* Fixed height container */
-  justify-content: flex-end; /* Align content to bottom */
+  height: 100%; /* Take full available height */
+  justify-content: flex-end;
 }
 
 .bar-visual {
@@ -501,7 +503,7 @@ input[type="checkbox"] {
   position: relative;
   margin-bottom: 8px;
   min-height: 20px;
-  max-height: 80px;
+  max-height: 100px; /* Increase max height */
 }
 
 .bar-fill {
@@ -539,6 +541,7 @@ input[type="checkbox"] {
 .search-container {
   margin-bottom: 15px;
   position: relative;
+  display: flex;
 }
 
 .search-input {
@@ -555,7 +558,7 @@ input[type="checkbox"] {
 .search-icon {
   color: var(--secondary-text);
   font-size: 16px;
-  /* Removed absolute positioning */
+  padding: 10px;
 }
 
 /* Sort icons */

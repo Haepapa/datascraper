@@ -349,6 +349,10 @@ function renderDashboard(tableIndex) {
     // Calculate pie chart percentage
     const activePercentage = totalCount > 0 ? (activeCount / totalCount) * 100 : 0;
     
+    // Calculate maximum available height for bars (accounting for labels and counts)
+-   const maxBarHeight = 80; // Increase from previous value
++   const maxBarHeight = 100; // Match CSS max-height value
+
     dashboard.innerHTML = `
     <div class="dashboard-header">
         <h3 class="dashboard-title">Statistics</h3>
@@ -381,17 +385,19 @@ function renderDashboard(tableIndex) {
         
         <div class="chart-container">
             <div class="chart-title">Sources Distribution</div>
-            <div class="bar-chart" style="flex: 1;">
-                ${sortedSources.map(([source, count]) => `
-                    <div class="bar-item">
-                        <div class="bar-visual" style="height: ${Math.max((count / maxCount) * 80, 20)}px;">
-                            <div class="bar-fill" style="height: ${Math.max((count / maxCount) * 80, 20)}px;"></div>
+            <div style="flex: 1; display: flex; align-items: flex-end; overflow: hidden;">
+                <div class="bar-chart">
+                    ${sortedSources.map(([source, count]) => `
+                        <div class="bar-item">
+                            <div class="bar-visual" style="height: ${Math.max((count / maxCount) * maxBarHeight, 20)}px;">
+                                <div class="bar-fill" style="height: ${Math.max((count / maxCount) * maxBarHeight, 20)}px;"></div>
+                            </div>
+                            <div class="bar-count">${count}</div>
+                            <div class="bar-label">${source}</div>
                         </div>
-                        <div class="bar-count">${count}</div>
-                        <div class="bar-label">${source}</div>
-                    </div>
-                `).join('')}
-                ${sortedSources.length === 0 ? '<div style="text-align: center; color: var(--secondary-text); font-size: 12px; padding: 20px;">No data</div>' : ''}
+                    `).join('')}
+                    ${sortedSources.length === 0 ? '<div style="text-align: center; color: var(--secondary-text); font-size: 12px; padding: 20px;">No data</div>' : ''}
+                </div>
             </div>
         </div>
     </div>
