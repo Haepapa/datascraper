@@ -350,8 +350,7 @@ function renderDashboard(tableIndex) {
     const activePercentage = totalCount > 0 ? (activeCount / totalCount) * 100 : 0;
     
     // Calculate maximum available height for bars (accounting for labels and counts)
--   const maxBarHeight = 80; // Increase from previous value
-+   const maxBarHeight = 100; // Match CSS max-height value
+    const maxBarHeight = 100; // Match CSS max-height value
 
     dashboard.innerHTML = `
     <div class="dashboard-header">
