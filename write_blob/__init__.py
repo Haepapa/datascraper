@@ -4,6 +4,11 @@ from shared.blob_utils import save_json_to_blob
 
 
 async def main(req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Handles HTTP requests to overwrite a blob in Azure Blob Storage with JSON data.
+    
+    Validates the presence of 'container' and 'blob' query parameters and parses the request body as JSON. If validation succeeds, saves the JSON data to the specified blob and returns a success response. Returns a 400 response if required parameters are missing or the JSON body is invalid.
+    """
     try:
         # Parse query parameters
         container = req.params.get("container")
