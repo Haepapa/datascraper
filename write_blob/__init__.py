@@ -1,6 +1,7 @@
 import azure.functions as func
-import json
+
 from shared.blob_utils import save_json_to_blob
+
 
 async def main(req: func.HttpRequest) -> func.HttpResponse:
     try:

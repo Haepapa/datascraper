@@ -1,11 +1,14 @@
 import os
 import json
-import aiohttp
+import requests
+import asyncio
+# import aiohttp
 from azure.storage.blob.aio import BlobServiceClient
 from azure.storage.blob.aio._blob_client_async import BlobClient
 from azure.storage.blob.aio._container_client_async import ContainerClient
 from azure.storage.blob.aio._download_async import StorageStreamDownloader
 from azure.core.exceptions import ResourceNotFoundError, ResourceExistsError
+from aiohttp import ClientSession, ClientResponseError, ClientTimeout
 
 BLOB_CONN_STR: str | None = os.getenv("AzureWebJobsStorage")
 BLOB_CONTAINER: str = "data"
@@ -47,7 +50,7 @@ async def load_urls(key: str | None = None) -> list[dict[str, str | dict[str, st
             return None
 
 
-async def save_json_to_blob(data: list[dict[str, str]], container: str, blob: str) -> None:
+async def save_json_to_blob(data: list[dict[str, str | dict[str, str | int]]], container: str, blob: str) -> None:
     """
     Uploads a list of dictionaries as a JSON file to the specified Azure Blob Storage location.
 
@@ -134,12 +137,64 @@ async def save_to_blob(
         # Full path to blob
         blob_path: str = f"{folder.strip('/')}/{filename}"
         blob_client: BlobClient = container_client.get_blob_client(blob_path)
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/114.0.0.0 Safari/537.36"
+            ),
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Connection": "keep-alive"
+        }
 
-        # Fetch content
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                response.raise_for_status()
-                content: bytes = await response.read()
+        try:
+            # Fetch content using aiohttp
+            timeout = ClientTimeout(total=30)
 
-        # Upload to blob
-        await blob_client.upload_blob(content, overwrite=True)
+            content: bytes | None = None
+
+            async with ClientSession(timeout=timeout, headers=headers) as session:
+                async with session.get(url, allow_redirects=True) as response:
+                    response.raise_for_status()
+                    content_type = response.headers.get("Content-Type", "")
+                    print(f"[aiohttp] Content-Type: {content_type}")
+                    content = await response.read()
+
+        except ClientResponseError as ex:
+            print(
+                f"[aiohttp] ClientResponseError for URL '{url}': {ex.status} - {ex.message}")
+            print(f"Falling back to requests for URL: {url}")
+
+            def fetch_with_requests():
+                try:
+                    r = requests.get(url, headers=headers, timeout=30)
+                    r.raise_for_status()
+                    print(
+                        f"[requests] Content-Type: {r.headers.get('Content-Type')}")
+                    return r.content
+                except Exception as ex2:
+                    print(f"[requests] Failed to fetch URL '{url}': {ex2}")
+                    return None
+
+            loop = asyncio.get_running_loop()
+            content = await loop.run_in_executor(None, fetch_with_requests)
+
+        except Exception as ex:
+            print(f"Unexpected error while downloading '{url}': {ex}")
+            content = None  # store the exception for use in error file
+
+        if content:
+            await blob_client.upload_blob(content, overwrite=True)
+        else:
+            url_data: list[dict[str, str | dict[str, str | int]]] | None = await load_urls()
+
+            if url_data is not None:
+                for section in url_data:
+                    for entry in section.get('data', []):
+                        if entry.get('url') == url:
+                            entry['errors'] = entry.get('errors', 0) + 1
+
+            if url_data is not None and len(url_data) > 0:
+                await save_json_to_blob(
+                    url_data, container=BLOB_CONTAINER, blob=BLOB_NAME)

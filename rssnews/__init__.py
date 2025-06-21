@@ -1,8 +1,10 @@
 from shared import blob_utils as bu
 from shared import utils as u
 from azure.functions import TimerRequest
+# import azure.functions as func
 
 
+# async def main(req: func.HttpRequest) -> func.HttpResponse:
 async def main(mytimer: TimerRequest) -> None:
     # get list of urls from urls.json for rssnews
     """
@@ -25,3 +27,6 @@ async def main(mytimer: TimerRequest) -> None:
                 folder=save_path,
                 filename=u.generate_filename()
             )
+        # return func.HttpResponse("RETURN", mimetype="text/html")
+
+    # return func.HttpResponse("RETURN", mimetype="text/html")
