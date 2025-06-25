@@ -728,11 +728,9 @@ function handleFormSubmit(e) {
     // Update the UI
     renderTableData(tableIndex);
     renderDashboard(tableIndex); // Update dashboard after data change
+    sendJsonToFunction(urlData, 'data', 'urls.json');
     closeModal();
     
-    // This is where you would send the data to your backend
-    console.log('Data ready to be sent to backend:', urlData);
-    sendJsonToFunction(urlData, 'data', 'urls.json');
 }
 
 /**
