@@ -732,6 +732,7 @@ function handleFormSubmit(e) {
     
     // This is where you would send the data to your backend
     console.log('Data ready to be sent to backend:', urlData);
+    sendJsonToFunction(urlData, 'data', 'urls.json');
 }
 
 /**
